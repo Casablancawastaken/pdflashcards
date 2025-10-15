@@ -1,5 +1,8 @@
 back/.venv/
-back/__pycache__
+back/__pycache__/
+__pycache__/
+*.pyc
+*.pyo
 back/uploads
 front/node_modules
 .vscode/*
