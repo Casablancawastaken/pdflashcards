@@ -1,9 +1,8 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import shutil
-import os
+from back.routers.upload import router as upload_router
 
-app = FastAPI()
+app = FastAPI(title="PDF Flashcards API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -13,24 +12,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-UPLOAD_DIR = "uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
 @app.get("/")
 async def root():
     return {"message": "Backend работает"}
 
-@app.post("/upload-pdf/")
-async def upload_file(file: UploadFile = File(...)):
-    file_path = os.path.join(UPLOAD_DIR, file.filename)
-
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    file_size = os.path.getsize(file_path)
-
-    return {
-        "filename": file.filename,
-        "size": file_size,
-        "message": f"Файл {file.filename} успешно загружен!"
-    }
+app.include_router(upload_router)
