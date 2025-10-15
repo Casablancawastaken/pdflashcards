@@ -1,17 +1,29 @@
-back/.venv/
-back/__pycache__/
+# ---- Python ----
 __pycache__/
 *.pyc
 *.pyo
-back/uploads
-front/node_modules
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+*.pyd
+*.db-journal
+*.sqlite3
 .env
+.venv/
+uploads/
+__pycache__/
+app.db
+back/.venv/
+back/__pycache__/
+back/uploads
+
+# ---- Node / React ----
+node_modules/
+dist/
+*.log
+front/node_modules/
+front/dist/
+front/.env
+.vscode/
+.idea/
+
+# ---- System ----
+.DS_Store
+Thumbs.db
