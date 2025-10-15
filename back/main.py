@@ -20,10 +20,17 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 async def root():
     return {"message": "Backend работает"}
 
-@app.post("/upload")
+@app.post("/upload-pdf")
 async def upload_file(file: UploadFile = File(...)):
     file_path = os.path.join(UPLOAD_DIR, file.filename)
 
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-    return {"message": f"Файл {file.filename} успешно загружен!", "path": file_path}
+
+    file_size = os.path.getsize(file_path)
+
+    return {
+        "filename": file.filename,
+        "size": file_size,
+        "message": f"Файл {file.filename} успешно загружен!"
+    }
