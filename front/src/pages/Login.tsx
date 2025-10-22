@@ -1,19 +1,17 @@
-import { useNavigate } from "react-router-dom"
-import { loginUser } from "../api/auth"
-import AuthForm from "../components/AuthForm"
+import AuthForm from "../components/AuthForm";
+import { loginUser } from "../api/auth";
+import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
-  const navigate = useNavigate()
+  const { login } = useAuth();
 
   const handleLogin = async (values: Record<string, string>) => {
     const res = await loginUser({
       username: values.username,
       password: values.password,
-    })
-    localStorage.setItem("token", res.access_token)
-    alert("Вы вошли в систему!")
-    navigate("/")
-  }
+    });
+    await login(res.access_token);
+  };
 
   return (
     <AuthForm
@@ -24,7 +22,7 @@ const Login = () => {
         { name: "password", placeholder: "Пароль", type: "password" },
       ]}
     />
-  )
-}
+  );
+};
 
-export default Login
+export default Login;
