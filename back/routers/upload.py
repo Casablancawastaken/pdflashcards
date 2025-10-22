@@ -1,41 +1,73 @@
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from sqlalchemy.orm import Session
 import os
 import shutil
-from fastapi import APIRouter, UploadFile, File, HTTPException
-from back.services.pdf_parser import extract_text_from_pdf       
-from back.schemas.upload import UploadResponse   
+from datetime import datetime
 
-router = APIRouter()
+from back.db.database import get_db
+from back.models.user import User
+from back.models.upload import Upload
+from back.services.pdf_parser import extract_text_from_pdf
+from back.routers.auth import get_current_user
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_DIR = os.path.join(os.path.dirname(BASE_DIR), "uploads")
+router = APIRouter(tags=["uploads"])
+
+UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-@router.post("/upload-pdf/", response_model=UploadResponse)
-async def upload_pdf(file: UploadFile = File(...)) -> UploadResponse:
-    if not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Нужен PDF-файл")
 
-    safe_name = file.filename.replace("/", "_").replace("\\", "_")
-    dest_path = os.path.join(UPLOAD_DIR, safe_name)
+@router.post("/upload-pdf")
+async def upload_file(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Загрузка PDF, сохранение и извлечение текста."""
+    file_path = os.path.join(UPLOAD_DIR, file.filename)
 
-    with open(dest_path, "wb") as out:
-        shutil.copyfileobj(file.file, out)
-    await file.close()
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
 
     try:
-        full_text = extract_text_from_pdf(dest_path, max_pages=5)
+        text = extract_text_from_pdf(file_path)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Не удалось распарсить PDF: {e}")
+        raise HTTPException(status_code=400, detail=f"Ошибка при чтении PDF: {e}")
 
-    preview = (full_text or "").strip()
-    if not preview:
-        preview = "Не удалось извлечь текст (возможно, это скан/изображения без текстового слоя)."
-
-    if len(preview) > 800:
-        preview = preview[:800] + "…"
-
-    return UploadResponse(
-        filename=safe_name,
-        message=f"Файл {safe_name} успешно загружен и обработан!",
-        preview=preview
+    # Сохраняем запись об этом файле в БД
+    upload_entry = Upload(
+        user_id=current_user.id,
+        filename=file.filename,
+        timestamp=datetime.utcnow(),
     )
+    db.add(upload_entry)
+    db.commit()
+    db.refresh(upload_entry)
+
+    # Возвращаем данные на фронт
+    return {
+        "filename": file.filename,
+        "preview": text[:1000],  # первые 1000 символов текста
+        "id": upload_entry.id,
+    }
+
+
+@router.get("/uploads/")
+async def get_user_uploads(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Возвращает историю загрузок текущего пользователя."""
+    uploads = (
+        db.query(Upload)
+        .filter(Upload.user_id == current_user.id)
+        .order_by(Upload.timestamp.desc())
+        .all()
+    )
+    return [
+        {
+            "id": u.id,
+            "filename": u.filename,
+            "timestamp": u.timestamp.isoformat(),
+        }
+        for u in uploads
+    ]

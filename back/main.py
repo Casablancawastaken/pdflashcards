@@ -1,10 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from back.routers.upload import router as upload_router
-from back.routers.auth import router as auth_router
+from back.routers import upload, auth, uploads
 
-app = FastAPI(title="PDF Flashcards API")  
+app = FastAPI(title="PDF Flashcards API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -14,9 +13,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(upload_router)
-app.include_router(auth_router)
+app.include_router(upload.router)
+app.include_router(auth.router)     
+app.include_router(uploads.router) 
 
 @app.get("/")
-async def root():
-    return {"message": "Backend работает"}
+def root():
+    return {"message": "PDF Flashcards API работает!"}

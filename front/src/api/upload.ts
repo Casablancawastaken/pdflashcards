@@ -1,28 +1,23 @@
-export type UploadResponse = {
-  filename: string
-  message: string
-  preview: string
+export interface UploadResponse {
+  filename: string;
+  preview: string;
 }
 
-export async function uploadPdf(file: File): Promise<UploadResponse> {
-  const form = new FormData()
-  form.append('file', file)
+export async function uploadPdf(file: File, token: string): Promise<UploadResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
 
-  const res = await fetch('http://127.0.0.1:8000/upload-pdf/', {
-    method: 'POST',
-    body: form,
-  })
+  const response = await fetch("http://127.0.0.1:8000/upload-pdf/", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`, // ✅ добавлено
+    },
+    body: formData,
+  });
 
-  if (!res.ok) {
-    let detail = ''
-    try {
-      const err = await res.json()
-      detail = err.detail || JSON.stringify(err)
-    } catch {
-      detail = res.statusText
-    }
-    throw new Error(detail || 'Upload failed')
+  if (!response.ok) {
+    throw new Error("Ошибка при загрузке PDF");
   }
 
-  return res.json()
+  return await response.json();
 }

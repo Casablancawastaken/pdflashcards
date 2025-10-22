@@ -1,46 +1,60 @@
-import { useState } from 'react'
-import { Box, Button, Input, Text, VStack } from '@chakra-ui/react'
-import { uploadPdf, type UploadResponse } from '../api/upload'
+import { useState } from "react";
+import { Box, Button, Input, Text, VStack } from "@chakra-ui/react";
+import { uploadPdf, type UploadResponse } from "../api/upload";
+import { useAuth } from "../context/AuthContext"; // ✅ добавили
 
 const PdfUpload = () => {
-  const [file, setFile] = useState<File | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<UploadResponse | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [file, setFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<UploadResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const { token } = useAuth(); // ✅ берём токен из контекста авторизации
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0])
-      setResult(null)
-      setError(null)
+      setFile(e.target.files[0]);
+      setResult(null);
+      setError(null);
     }
-  }
+  };
 
   const onUpload = async () => {
     if (!file) {
-      setError('Выберите PDF-файл')
-      return
+      setError("Выберите PDF-файл");
+      return;
     }
-    setLoading(true)
-    setError(null)
-    setResult(null)
+
+    if (!token) {
+      setError("Вы должны войти в систему, чтобы загружать файлы");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setResult(null);
+
     try {
-      const r = await uploadPdf(file)
-      setResult(r)
+      const r = await uploadPdf(file, token); // ✅ передаём токен в функцию uploadPdf
+      setResult(r);
     } catch (e) {
       if (e instanceof Error) {
-        setError(e.message)
+        setError(e.message);
       } else {
-        setError('Ошибка загрузки')
+        setError("Ошибка загрузки");
       }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <VStack align="stretch" spacing={4}>
-      <Input type="file" accept="application/pdf" onChange={onFileChange} borderRadius={0} />
+      <Input
+        type="file"
+        accept="application/pdf"
+        onChange={onFileChange}
+        borderRadius={0}
+      />
       <Button onClick={onUpload} isLoading={loading}>
         Загрузить и извлечь текст
       </Button>
@@ -49,12 +63,14 @@ const PdfUpload = () => {
 
       {result && (
         <Box border="1px solid #eee" p={4}>
-          <Text fontWeight="bold" mb={2}>Файл: {result.filename}</Text>
+          <Text fontWeight="bold" mb={2}>
+            Файл: {result.filename}
+          </Text>
           <Text whiteSpace="pre-wrap">{result.preview}</Text>
         </Box>
       )}
     </VStack>
-  )
-}
+  );
+};
 
-export default PdfUpload
+export default PdfUpload;
