@@ -33,7 +33,6 @@ async def upload_file(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Ошибка при чтении PDF: {e}")
 
-    # Сохраняем запись об этом файле в БД
     upload_entry = Upload(
         user_id=current_user.id,
         filename=file.filename,
@@ -43,10 +42,9 @@ async def upload_file(
     db.commit()
     db.refresh(upload_entry)
 
-    # Возвращаем данные на фронт
     return {
         "filename": file.filename,
-        "preview": text[:1000],  # первые 1000 символов текста
+        "preview": text[:1000],  
         "id": upload_entry.id,
     }
 
@@ -56,7 +54,7 @@ async def get_user_uploads(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Возвращает историю загрузок текущего пользователя."""
+    
     uploads = (
         db.query(Upload)
         .filter(Upload.user_id == current_user.id)

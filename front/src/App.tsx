@@ -6,6 +6,9 @@ import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
+import UploadDetail from "./pages/UploadDetail";
+import UploadCards from "./pages/UploadCards";
+import Settings from "./pages/Settings";
 
 function App() {
   const { user, logout, loading } = useAuth();
@@ -34,7 +37,10 @@ function App() {
         <Spacer />
         {user ? (
           <>
-            <Text>Привет, {user.username}!</Text>
+            <Button as={Link} to="/settings" colorScheme="gray" variant="outline">
+              Настройки
+            </Button>
+            <Text>{user.username}</Text>
             <Button colorScheme="red" onClick={logout}>
               Выйти
             </Button>
@@ -63,6 +69,9 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/uploads/:id" element={<UploadDetail />} />
+        <Route path="/uploads/:id/cards" element={<UploadCards />} />
+        <Route path="/settings" element={<Settings />} />
       </Routes>
     </Container>
   );

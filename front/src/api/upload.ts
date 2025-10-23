@@ -10,7 +10,7 @@ export async function uploadPdf(file: File, token: string): Promise<UploadRespon
   const response = await fetch("http://127.0.0.1:8000/upload-pdf/", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${token}`, // ✅ добавлено
+      Authorization: `Bearer ${token}`, 
     },
     body: formData,
   });

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Body
 from sqlalchemy.orm import Session
 from datetime import timedelta
 
@@ -58,3 +58,18 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserOut)
 def read_current_user(current_user: User = Depends(get_current_user)):
     return current_user
+
+@router.put("/change-password")
+def change_password(
+    old_password: str = Body(...),
+    new_password: str = Body(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not verify_password(old_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Неверный текущий пароль")
+
+    current_user.hashed_password = hash_password(new_password)
+    db.add(current_user)
+    db.commit()
+    return {"message": "Пароль успешно изменён"}
