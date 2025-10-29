@@ -87,14 +87,10 @@ const Profile = () => {
                 </Text>
               </Box>
               <HStack>
-                <Button
-                  colorScheme="blue"
-                  variant="outline"
-                  onClick={() => (window.location.href = `/uploads/${u.id}`)}
-                >
+                <Button colorScheme="blue" variant="outline" onClick={() => (window.location.href = `/uploads/${u.id}`)}>
                   Посмотреть
                 </Button>
-                  <Button colorScheme="purple" variant="outline" onClick={() => (window.location.href = `/uploads/${u.id}/cards`)}>
+                  <Button colorScheme="purple" variant="outline" onClick={() => (window.location.href = `/cards/${u.id}`)}>
                   Карточки
                 </Button>
                 <Button colorScheme="red" variant="outline" onClick={() => handleDelete(u.id)}>
