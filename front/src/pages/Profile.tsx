@@ -23,7 +23,7 @@ const Profile = () => {
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const toast = useToast();
 
-  // Загружаем историю
+  
   const fetchUploads = async () => {
     const r = await fetch("http://127.0.0.1:8000/uploads/", {
       headers: { Authorization: `Bearer ${token}` },
@@ -37,7 +37,7 @@ const Profile = () => {
     if (token) fetchUploads();
   }, [token]);
 
-  // Удаление одного файла
+
   const handleDelete = async (id: number) => {
     const r = await fetch(`http://127.0.0.1:8000/uploads/${id}`, {
       method: "DELETE",
@@ -51,7 +51,7 @@ const Profile = () => {
     }
   };
 
-  // Очистка всей истории
+  
   const handleClearAll = async () => {
     const r = await fetch("http://127.0.0.1:8000/uploads/clear", {
       method: "DELETE",
@@ -81,7 +81,7 @@ const Profile = () => {
           <Box key={u.id} border="1px solid #ccc" p={3} borderRadius="md">
             <HStack justify="space-between">
               <Box>
-                <Text fontWeight="bold">{u.filename}</Text>
+                <Text fontWeight="bold" maxW="200px" isTruncated>{u.filename}</Text>
                 <Text fontSize="sm" color="gray.500">
                   {new Date(u.timestamp).toLocaleString()}
                 </Text>

@@ -1,4 +1,5 @@
 export interface UploadResponse {
+  id: number;
   filename: string;
   preview: string;
 }
