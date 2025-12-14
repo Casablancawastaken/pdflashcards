@@ -15,12 +15,25 @@ const Login = () => {
 
   return (
     <AuthForm
+      title="Вход"
       onSubmit={handleLogin}
       buttonText="Войти"
       fields={[
-        { name: "username", placeholder: "Имя пользователя" },
-        { name: "password", placeholder: "Пароль", type: "password" },
+        {
+          name: "username",
+          label: "Имя пользователя",
+          placeholder: "Введите имя пользователя",
+        },
+        {
+          name: "password",
+          label: "Пароль",
+          placeholder: "Введите пароль",
+          type: "password",
+        },
       ]}
+      footerText="Нет аккаунта?"
+      footerLinkText="Регистрация"
+      footerLinkTo="/register"
     />
   );
 };
