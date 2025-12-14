@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Button,
@@ -7,23 +7,37 @@ import {
   Text,
   HStack,
   useToast,
-  Divider,
+  Icon,
+  Flex,
+  Input,
 } from "@chakra-ui/react";
+import {
+  FiFileText,
+  FiTrash2,
+  FiEye,
+  FiCpu,
+  FiClock,
+  FiSearch,
+  FiChevronLeft,
+  FiChevronRight,
+} from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 
 interface UploadItem {
   id: number;
   filename: string;
-  preview: string;
   timestamp: string;
 }
+
+const ITEMS_PER_PAGE = 4;
 
 const Profile = () => {
   const { token, user } = useAuth();
   const [uploads, setUploads] = useState<UploadItem[]>([]);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const toast = useToast();
 
-  
   const fetchUploads = async () => {
     const r = await fetch("http://127.0.0.1:8000/uploads/", {
       headers: { Authorization: `Bearer ${token}` },
@@ -38,6 +52,24 @@ const Profile = () => {
   }, [token]);
 
 
+  const filteredUploads = useMemo(() => {
+    return uploads.filter((u) =>
+      u.filename.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [uploads, search]);
+
+
+  const totalPages = Math.ceil(filteredUploads.length / ITEMS_PER_PAGE);
+
+  const paginatedUploads = useMemo(() => {
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    return filteredUploads.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredUploads, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
   const handleDelete = async (id: number) => {
     const r = await fetch(`http://127.0.0.1:8000/uploads/${id}`, {
       method: "DELETE",
@@ -46,12 +78,9 @@ const Profile = () => {
     if (r.ok) {
       toast({ title: "Файл удалён", status: "success" });
       setUploads((prev) => prev.filter((u) => u.id !== id));
-    } else {
-      toast({ title: "Ошибка удаления", status: "error" });
     }
   };
 
-  
   const handleClearAll = async () => {
     const r = await fetch("http://127.0.0.1:8000/uploads/clear", {
       method: "DELETE",
@@ -60,48 +89,165 @@ const Profile = () => {
     if (r.ok) {
       toast({ title: "История очищена", status: "success" });
       setUploads([]);
-    } else {
-      toast({ title: "Ошибка очистки", status: "error" });
     }
   };
 
   return (
-    <Box>
-      <Heading size="lg" mb={4}>
-        Профиль: {user?.username}
-      </Heading>
+    <Box maxW="950px" mx="auto">
 
-      <Button colorScheme="red" mb={4} onClick={handleClearAll}>
-        Очистить историю
-      </Button>
+      <Box
+        bg="white"
+        borderWidth="1.5px"
+        borderColor="blue.400"
+        borderRadius="xl"
+        boxShadow="sm"
+        p={6}
+        mb={6}
+      >
+        <Flex justify="space-between" align="center" gap={4} wrap="wrap">
+          <Box>
+            <Heading size="lg" mb={1}>
+              История файлов
+            </Heading>
+            <Text color="gray.600">
+              Пользователь: <b>{user?.username}</b>
+            </Text>
+          </Box>
 
-      <VStack align="stretch" spacing={4}>
-        {uploads.length === 0 && <Text>История загрузок пуста</Text>}
-        {uploads.map((u) => (
-          <Box key={u.id} border="1px solid #ccc" p={3} borderRadius="md">
-            <HStack justify="space-between">
-              <Box>
-                <Text fontWeight="bold" maxW="200px" isTruncated>{u.filename}</Text>
-                <Text fontSize="sm" color="gray.500">
-                  {new Date(u.timestamp).toLocaleString()}
-                </Text>
+          <Button
+            leftIcon={<FiTrash2 />}
+            colorScheme="red"
+            variant="outline"
+            onClick={handleClearAll}
+            isDisabled={uploads.length === 0}
+          >
+            Очистить историю
+          </Button>
+        </Flex>
+
+
+        <HStack mt={4}>
+          <Icon as={FiSearch} color="gray.500" />
+          <Input
+            placeholder="Поиск по имени файла"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            maxW="300px"
+          />
+        </HStack>
+      </Box>
+
+
+      {filteredUploads.length === 0 && (
+        <Box
+          borderWidth="2px"
+          borderStyle="dashed"
+          borderColor="blue.300"
+          borderRadius="xl"
+          p={10}
+          textAlign="center"
+          bg="white"
+          color="gray.500"
+        >
+          <Text fontSize="lg" mb={2}>
+            Ничего не найдено
+          </Text>
+          <Text fontSize="sm">
+            Попробуйте изменить поисковый запрос
+          </Text>
+        </Box>
+      )}
+
+
+      <VStack spacing={4} align="stretch">
+        {paginatedUploads.map((u) => (
+          <Box
+            key={u.id}
+            borderWidth="1px"
+            borderRadius="xl"
+            p={5}
+            bg="white"
+            boxShadow="sm"
+          >
+            <Flex justify="space-between" align="center" gap={4} wrap="wrap">
+              <Box minW={0} flex="1">
+                <HStack spacing={2} mb={2}>
+                  <Icon as={FiFileText} color="blue.500" />
+                  <Text fontWeight="bold" isTruncated>
+                    {u.filename}
+                  </Text>
+                </HStack>
+
+                <HStack spacing={2}>
+                  <Icon as={FiClock} color="gray.500" />
+                  <Text fontSize="sm" color="gray.500">
+                    {new Date(u.timestamp).toLocaleString()}
+                  </Text>
+                </HStack>
               </Box>
-              <HStack>
-                <Button colorScheme="blue" variant="outline" onClick={() => (window.location.href = `/uploads/${u.id}`)}>
-                  Посмотреть
+
+              <HStack spacing={2}>
+                <Button
+                  leftIcon={<FiEye />}
+                  size="sm"
+                  variant="outline"
+                  colorScheme="blue"
+                  onClick={() => (window.location.href = `/uploads/${u.id}`)}
+                >
+                  Просмотр
                 </Button>
-                  <Button colorScheme="purple" variant="outline" onClick={() => (window.location.href = `/cards/${u.id}`)}>
+
+                <Button
+                  leftIcon={<FiCpu />}
+                  size="sm"
+                  variant="outline"
+                  colorScheme="purple"
+                  onClick={() => (window.location.href = `/cards/${u.id}`)}
+                >
                   Карточки
                 </Button>
-                <Button colorScheme="red" variant="outline" onClick={() => handleDelete(u.id)}>
+
+                <Button
+                  leftIcon={<FiTrash2 />}
+                  size="sm"
+                  variant="outline"
+                  colorScheme="red"
+                  onClick={() => handleDelete(u.id)}
+                >
                   Удалить
                 </Button>
               </HStack>
-            </HStack>
+            </Flex>
           </Box>
         ))}
       </VStack>
-      <Divider my={6} />
+
+
+      {totalPages > 1 && (
+        <HStack justify="center" mt={6} spacing={3}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setPage((p) => p - 1)}
+            isDisabled={page === 1}
+          >
+            <FiChevronLeft />
+          </Button>
+
+          <Text fontSize="sm" color="gray.600">
+            {page} / {totalPages}
+          </Text>
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setPage((p) => p + 1)}
+            isDisabled={page === totalPages}
+          >
+            <FiChevronRight />
+          </Button>
+        </HStack>
+      )}
     </Box>
   );
 };
