@@ -8,7 +8,6 @@ import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import ProtectedRoute from "./components/ProtectedRoute";
 import UploadDetail from "./pages/UploadDetail";
-import UploadCards from "./pages/UploadCards";
 import Settings from "./pages/Settings";
 import CardsPage from "./pages/CardsPage";
 
@@ -31,7 +30,6 @@ function App() {
             }
           />
           <Route path="/uploads/:id" element={<UploadDetail />} />
-          <Route path="/uploads/:id/cards" element={<UploadCards />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/cards/:id" element={<CardsPage />} />
         </Routes>
