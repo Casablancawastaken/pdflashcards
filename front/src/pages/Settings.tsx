@@ -8,13 +8,10 @@ import {
   Text,
   Divider,
   useToast,
-  HStack,
-  Icon,
   Spinner,
   Center,
+  SimpleGrid,
 } from "@chakra-ui/react";
-import { AtSignIcon, LockIcon, TimeIcon } from "@chakra-ui/icons";
-import { FaUser } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 
 interface UserProfile {
@@ -25,35 +22,34 @@ interface UserProfile {
 
 const Settings = () => {
   const { token } = useAuth();
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
+
   const toast = useToast();
 
-  // Загружаем профиль пользователя
   useEffect(() => {
-    const fetchProfile = async () => {
+    const loadProfile = async () => {
       if (!token) return;
       try {
         const r = await fetch("http://127.0.0.1:8000/auth/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (r.ok) {
-          const data = await r.json();
-          setUserProfile(data);
+          setProfile(await r.json());
         }
       } finally {
         setLoadingProfile(false);
       }
     };
-    fetchProfile();
+    loadProfile();
   }, [token]);
 
-  // Смена пароля
-  const handleChangePassword = async () => {
+  const changePassword = async () => {
     if (newPassword !== repeatPassword) {
       toast({ title: "Пароли не совпадают", status: "error" });
       return;
@@ -74,22 +70,19 @@ const Settings = () => {
       });
 
       if (r.ok) {
-        toast({ title: "Пароль успешно изменён", status: "success" });
+        toast({ title: "Пароль изменён", status: "success" });
         setOldPassword("");
         setNewPassword("");
         setRepeatPassword("");
       } else {
         const data = await r.json();
-        toast({ title: data.detail || "Ошибка смены пароля", status: "error" });
+        toast({ title: data.detail || "Ошибка", status: "error" });
       }
-    } catch {
-      toast({ title: "Ошибка сети", status: "error" });
     } finally {
       setLoading(false);
     }
   };
 
-  // Пока профиль загружается
   if (loadingProfile) {
     return (
       <Center h="60vh">
@@ -99,76 +92,89 @@ const Settings = () => {
   }
 
   return (
-    <Box maxW="md" mx="auto" mt={8} p={6} borderWidth="1px" borderRadius="lg" boxShadow="sm">
-      <Heading size="lg" mb={6} textAlign="center">
-        Настройки профиля
-      </Heading>
+    <Center py={12}>
+      <Box
+        w="100%"
+        maxW="600px"
+        bg="white"
+        borderRadius="2xl"
+        boxShadow="lg"
+        borderWidth="1px"
+        p={10}
+      >
 
-      {/* --- Информация о пользователе --- */}
-      {userProfile ? (
-        <Box p={4} borderWidth="1px" borderRadius="md" bg="gray.50" mb={6}>
-          <VStack align="stretch" spacing={3}>
-            <HStack>
-              <Icon as={FaUser} color="blue.500" />
-              <Text><b>Имя пользователя:</b> {userProfile.username}</Text>
-            </HStack>
-            <HStack>
-              <Icon as={AtSignIcon} color="green.500" />
-              <Text><b>Email:</b> {userProfile.email}</Text>
-            </HStack>
-            <HStack>
-              <Icon as={LockIcon} color="orange.500" />
-              <Text>
-                <b>Пароль:</b> {"•".repeat(10)}
-              </Text>
-            </HStack>
-            {userProfile.created_at && (
-              <HStack>
-                <Icon as={TimeIcon} color="purple.500" />
-                <Text>
-                  <b>Дата регистрации:</b>{" "}
-                  {new Date(userProfile.created_at).toLocaleString()}
+        <Heading size="lg" textAlign="center" mb={2}>
+          Настройки аккаунта
+        </Heading>
+        <Text textAlign="center" color="gray.500" mb={8}>
+          Управление профилем и безопасностью
+        </Text>
+
+
+        {profile && (
+          <>
+            <Heading size="sm" mb={4}>
+              Информация о пользователе
+            </Heading>
+
+            <SimpleGrid columns={2} spacing={4} mb={6}>
+              <Box>
+                <Text fontSize="sm" color="gray.500">
+                  Имя пользователя
                 </Text>
-              </HStack>
-            )}
-          </VStack>
-        </Box>
-      ) : (
-        <Text>Ошибка загрузки профиля.</Text>
-      )}
+                <Text fontWeight="medium">{profile.username}</Text>
+              </Box>
 
-      <Divider my={6} />
+              <Box>
+                <Text fontSize="sm" color="gray.500">
+                  Email
+                </Text>
+                <Text fontWeight="medium">{profile.email}</Text>
+              </Box>
+            </SimpleGrid>
 
-      {/* --- Смена пароля --- */}
-      <VStack spacing={4} align="stretch">
-        <Heading size="md">Сменить пароль</Heading>
-        <Input
-          placeholder="Старый пароль"
-          type="password"
-          value={oldPassword}
-          onChange={(e) => setOldPassword(e.target.value)}
-        />
-        <Input
-          placeholder="Новый пароль"
-          type="password"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-        />
-        <Input
-          placeholder="Повторите новый пароль"
-          type="password"
-          value={repeatPassword}
-          onChange={(e) => setRepeatPassword(e.target.value)}
-        />
-        <Button
-          colorScheme="blue"
-          onClick={handleChangePassword}
-          isLoading={loading}
-        >
-          Сменить пароль
-        </Button>
-      </VStack>
-    </Box>
+            <Divider my={6} />
+          </>
+        )}
+
+ 
+        <Heading size="sm" mb={4}>
+          Смена пароля
+        </Heading>
+
+        <VStack spacing={4}>
+          <Input
+            placeholder="Текущий пароль"
+            type="password"
+            value={oldPassword}
+            onChange={(e) => setOldPassword(e.target.value)}
+          />
+          <Input
+            placeholder="Новый пароль"
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+          />
+          <Input
+            placeholder="Повторите новый пароль"
+            type="password"
+            value={repeatPassword}
+            onChange={(e) => setRepeatPassword(e.target.value)}
+          />
+
+          <Button
+            mt={4}
+            size="lg"
+            w="100%"
+            colorScheme="blue"
+            onClick={changePassword}
+            isLoading={loading}
+          >
+            Обновить пароль
+          </Button>
+        </VStack>
+      </Box>
+    </Center>
   );
 };
 
