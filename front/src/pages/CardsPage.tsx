@@ -24,6 +24,7 @@ const CardsPage = () => {
   const [cards, setCards] = useState<Card[]>([]);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
+  const [openCardId, setOpenCardId] = useState<number | null>(null);
   const toast = useToast();
 
   const fetchCards = async () => {
@@ -59,8 +60,6 @@ const CardsPage = () => {
       setQuestion("");
       setAnswer("");
       fetchCards();
-    } else {
-      toast({ title: "Ошибка создания карточки", status: "error" });
     }
   };
 
@@ -76,7 +75,13 @@ const CardsPage = () => {
   };
 
   return (
-    <Box maxW="md" mx="auto" mt={8} p={6} borderWidth="1px" borderRadius="lg">
+    <Box
+      bg="white"
+      p={6}
+      borderRadius="lg"
+      borderWidth="1px"
+      boxShadow="sm"
+    >
       <Heading size="lg" mb={6} textAlign="center">
         Карточки по файлу №{id}
       </Heading>
@@ -92,41 +97,48 @@ const CardsPage = () => {
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
         />
-        <Button colorScheme="teal" onClick={handleCreate}>
+        <Button colorScheme="blue" onClick={handleCreate}>
           Создать карточку
         </Button>
       </VStack>
 
-      {cards.length === 0 ? (
-        <Text textAlign="center" color="gray.500">
-          Карточек пока нет
-        </Text>
-      ) : (
-        <VStack align="stretch" spacing={3}>
-          {cards.map((card) => (
-            <Box
-              key={card.id}
-              borderWidth="1px"
-              borderRadius="md"
-              p={3}
-              bg="gray.50"
-            >
-              <Text fontWeight="bold">Вопрос: {card.question}</Text>
-              <Text>Ответ: {card.answer}</Text>
-              <HStack justify="end" mt={2}>
-                <Button
-                  size="sm"
-                  colorScheme="red"
-                  variant="outline"
-                  onClick={() => handleDelete(card.id)}
-                >
-                  Удалить
-                </Button>
-              </HStack>
-            </Box>
-          ))}
-        </VStack>
-      )}
+      <VStack align="stretch" spacing={3}>
+        {cards.map((card) => (
+          <Box
+            key={card.id}
+            borderWidth="1px"
+            borderRadius="lg"
+            p={4}
+            bg="gray.50"
+            cursor="pointer"
+            onClick={() =>
+              setOpenCardId(openCardId === card.id ? null : card.id)
+            }
+          >
+            <Text fontWeight="bold">{card.question}</Text>
+
+            {openCardId === card.id && (
+              <Text mt={2} color="gray.700">
+                {card.answer}
+              </Text>
+            )}
+
+            <HStack justify="end" mt={3}>
+              <Button
+                size="xs"
+                colorScheme="red"
+                variant="outline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(card.id);
+                }}
+              >
+                Удалить
+              </Button>
+            </HStack>
+          </Box>
+        ))}
+      </VStack>
     </Box>
   );
 };

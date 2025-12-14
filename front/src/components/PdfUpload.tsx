@@ -1,5 +1,15 @@
 import { useState } from "react";
-import { Box, Button, Input, Text, VStack, useToast } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Input,
+  Text,
+  VStack,
+  Heading,
+  Icon,
+  useToast,
+} from "@chakra-ui/react";
+import { FiUploadCloud, FiCpu } from "react-icons/fi";
 import { uploadPdf, type UploadResponse } from "../api/upload";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -10,6 +20,7 @@ const PdfUpload = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [result, setResult] = useState<UploadResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const { token } = useAuth();
   const toast = useToast();
@@ -41,6 +52,7 @@ const PdfUpload = () => {
     try {
       const r = await uploadPdf(file, token);
       setResult(r);
+      toast({ title: "PDF успешно загружен", status: "success" });
     } catch (e) {
       if (e instanceof Error) setError(e.message);
       else setError("Ошибка загрузки");
@@ -78,32 +90,119 @@ const PdfUpload = () => {
     }
   };
 
-  return (
-    <VStack align="stretch" spacing={4}>
-      <Input type="file" accept="application/pdf" onChange={onFileChange} />
+  // --- Drag & Drop handlers ---
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
 
-      <Button onClick={onUpload} isLoading={loading}>
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile && droppedFile.type === "application/pdf") {
+      setFile(droppedFile);
+      setResult(null);
+      setError(null);
+    } else {
+      setError("Можно загрузить только PDF-файл");
+    }
+  };
+
+  return (
+    <VStack spacing={10} align="stretch">
+      {/* Заголовок */}
+      <Box textAlign="center">
+        <Heading size="lg" mb={2}>
+          Генерация карточек из PDF
+        </Heading>
+        <Text color="gray.600">
+          Загрузите PDF-файл — мы создадим учебные карточки автоматически
+        </Text>
+      </Box>
+
+      {/* Зона загрузки + drag & drop */}
+      <Box
+        borderWidth="2px"
+        borderStyle="dashed"
+        borderColor={isDragging ? "blue.500" : "blue.300"}
+        borderRadius="xl"
+        p={10}
+        bg={isDragging ? "blue.50" : "white"}
+        textAlign="center"
+        transition="all 0.2s"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <VStack spacing={4}>
+          <Icon as={FiUploadCloud} boxSize={12} color="blue.500" />
+
+          <Text fontSize="lg" fontWeight="medium">
+            {isDragging ? "Отпустите файл для загрузки" : "Выберите PDF файл"}
+          </Text>
+
+          <Text fontSize="sm" color="gray.500">
+            Поддерживается только формат PDF
+          </Text>
+
+          <Input
+            type="file"
+            accept="application/pdf"
+            display="none"
+            id="pdf-upload"
+            onChange={onFileChange}
+          />
+
+          <Button
+            as="label"
+            htmlFor="pdf-upload"
+            colorScheme="blue"
+            variant="outline"
+            cursor="pointer"
+          >
+            Выбрать файл
+          </Button>
+
+          {file && (
+            <Text fontSize="sm" color="gray.600">
+              Выбран файл: <b>{file.name}</b>
+            </Text>
+          )}
+        </VStack>
+      </Box>
+
+      {/* Загрузка PDF */}
+      <Button
+        colorScheme="blue"
+        size="lg"
+        onClick={onUpload}
+        isLoading={loading}
+      >
         Загрузить PDF
       </Button>
 
       {error && <Text color="red.500">{error}</Text>}
 
+      {/* Главная кнопка генерации */}
       {result && (
-        <Box border="1px solid #eee" p={4}>
-          <Text fontWeight="bold" mb={2}>
-            Файл: {result.filename}
-          </Text>
-          <Text whiteSpace="pre-wrap" maxH="200px" overflow="auto">
-            {result.preview}
-          </Text>
-
+        <Box textAlign="center">
           <Button
-            colorScheme="purple"
-            mt={3}
+            colorScheme="blue"
+            size="lg"
+            px={16}
+            py={7}
+            fontSize="lg"
+            leftIcon={<FiCpu />}
             onClick={generateAI}
             isLoading={aiLoading}
           >
-            Сгенерировать карточки (ИИ)
+            Сгенерировать карточки
           </Button>
         </Box>
       )}
