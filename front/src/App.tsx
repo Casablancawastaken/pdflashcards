@@ -21,14 +21,7 @@ function App() {
           <Route path="/" element={<PdfUpload />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/profile" element={<ProtectedRoute> <Profile /> </ProtectedRoute>} />
           <Route path="/uploads/:id" element={<UploadDetail />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/cards/:id" element={<CardsPage />} />

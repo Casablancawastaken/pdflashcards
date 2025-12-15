@@ -4,7 +4,6 @@ from datetime import datetime
 import enum
 from back.models.flashcards import Flashcard
 
-
 from back.db.database import Base
 
 
@@ -23,16 +22,7 @@ class Upload(Base):
     timestamp = Column(DateTime, default=datetime.utcnow)
     user_id = Column(Integer, ForeignKey("users.id"))
 
-    status = Column(
-        Enum(UploadStatus),
-        default=UploadStatus.uploaded,
-        nullable=False,
-    )
+    status = Column(Enum(UploadStatus), default=UploadStatus.uploaded, nullable=False)
 
     user = relationship("User", back_populates="uploads")
-    cards = relationship(
-        "Flashcard",
-        backref="upload",
-        cascade="all, delete-orphan",
-        passive_deletes=True,
-    )
+    cards = relationship("Flashcard", backref="upload", cascade="all, delete-orphan", passive_deletes=True)

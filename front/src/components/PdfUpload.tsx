@@ -1,14 +1,5 @@
 import { useState } from "react";
-import {
-  Box,
-  Button,
-  Input,
-  Text,
-  VStack,
-  Heading,
-  Icon,
-  useToast,
-} from "@chakra-ui/react";
+import { Box, Button, Input, Text, VStack, Heading, Icon, useToast } from "@chakra-ui/react";
 import { FiUploadCloud, FiCpu } from "react-icons/fi";
 import { uploadPdf, type UploadResponse } from "../api/upload";
 import { useAuth } from "../context/AuthContext";
@@ -89,7 +80,6 @@ const PdfUpload = () => {
     }
   };
 
-  // --- Drag & Drop handlers ---
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
@@ -115,7 +105,6 @@ const PdfUpload = () => {
 
   return (
     <VStack spacing={10} align="stretch">
-      {/* Заголовок */}
       <Box textAlign="center">
         <Heading size="lg" mb={2}>
           Генерация карточек из PDF
@@ -125,20 +114,7 @@ const PdfUpload = () => {
         </Text>
       </Box>
 
-      {/* Зона загрузки + drag & drop */}
-      <Box
-        borderWidth="2px"
-        borderStyle="dashed"
-        borderColor={isDragging ? "blue.500" : "blue.300"}
-        borderRadius="xl"
-        p={10}
-        bg={isDragging ? "blue.50" : "white"}
-        textAlign="center"
-        transition="all 0.2s"
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
+      <Box borderWidth="2px" borderStyle="dashed" borderColor={isDragging ? "blue.500" : "blue.300"} borderRadius="xl" p={10} bg={isDragging ? "blue.50" : "white"} textAlign="center" transition="all 0.2s" onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
         <VStack spacing={4}>
           <Icon as={FiUploadCloud} boxSize={12} color="blue.500" />
 
@@ -150,21 +126,9 @@ const PdfUpload = () => {
             Поддерживается только формат PDF
           </Text>
 
-          <Input
-            type="file"
-            accept="application/pdf"
-            display="none"
-            id="pdf-upload"
-            onChange={onFileChange}
-          />
+          <Input type="file" accept="application/pdf" display="none" id="pdf-upload" onChange={onFileChange}/>
 
-          <Button
-            as="label"
-            htmlFor="pdf-upload"
-            colorScheme="blue"
-            variant="outline"
-            cursor="pointer"
-          >
+          <Button as="label" htmlFor="pdf-upload" colorScheme="blue" variant="outline" cursor="pointer">
             Выбрать файл
           </Button>
 
@@ -176,31 +140,15 @@ const PdfUpload = () => {
         </VStack>
       </Box>
 
-      {/* Загрузка PDF */}
-      <Button
-        colorScheme="blue"
-        size="lg"
-        onClick={onUpload}
-        isLoading={loading}
-      >
+      <Button colorScheme="blue" size="lg" onClick={onUpload} isLoading={loading}>
         Загрузить PDF
       </Button>
 
       {error && <Text color="red.500">{error}</Text>}
 
-      {/* Главная кнопка генерации */}
       {result && (
         <Box textAlign="center">
-          <Button
-            colorScheme="blue"
-            size="lg"
-            px={16}
-            py={7}
-            fontSize="lg"
-            leftIcon={<FiCpu />}
-            onClick={generateAI}
-            isLoading={aiLoading}
-          >
+          <Button colorScheme="blue" size="lg" px={16} py={7} fontSize="lg" leftIcon={<FiCpu />} onClick={generateAI} isLoading={aiLoading}>
             Сгенерировать карточки
           </Button>
         </Box>

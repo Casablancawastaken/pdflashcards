@@ -1,17 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Box,
-  Button,
-  Input,
-  VStack,
-  Heading,
-  Text,
-  Divider,
-  useToast,
-  Spinner,
-  Center,
-  SimpleGrid,
-} from "@chakra-ui/react";
+import { Box, Button, Input, VStack, Heading, Text, Divider, useToast, Spinner, Center, SimpleGrid } from "@chakra-ui/react";
 import { useAuth } from "../context/AuthContext";
 
 interface UserProfile {
@@ -93,15 +81,7 @@ const Settings = () => {
 
   return (
     <Center py={12}>
-      <Box
-        w="100%"
-        maxW="600px"
-        bg="white"
-        borderRadius="2xl"
-        boxShadow="lg"
-        borderWidth="1px"
-        p={10}
-      >
+      <Box w="100%" maxW="600px" bg="white" borderRadius="2xl" boxShadow="lg" borderWidth="1px" p={10}>
 
         <Heading size="lg" textAlign="center" mb={2}>
           Настройки аккаунта
@@ -143,33 +123,11 @@ const Settings = () => {
         </Heading>
 
         <VStack spacing={4}>
-          <Input
-            placeholder="Текущий пароль"
-            type="password"
-            value={oldPassword}
-            onChange={(e) => setOldPassword(e.target.value)}
-          />
-          <Input
-            placeholder="Новый пароль"
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-          />
-          <Input
-            placeholder="Повторите новый пароль"
-            type="password"
-            value={repeatPassword}
-            onChange={(e) => setRepeatPassword(e.target.value)}
-          />
+          <Input placeholder="Текущий пароль" type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)}/>
+          <Input placeholder="Новый пароль" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}/>
+          <Input placeholder="Повторите новый пароль" type="password" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)}/>
 
-          <Button
-            mt={4}
-            size="lg"
-            w="100%"
-            colorScheme="blue"
-            onClick={changePassword}
-            isLoading={loading}
-          >
+          <Button mt={4} size="lg" w="100%" colorScheme="blue" onClick={changePassword} isLoading={loading}>
             Обновить пароль
           </Button>
         </VStack>

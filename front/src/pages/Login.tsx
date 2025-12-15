@@ -14,10 +14,7 @@ const Login = () => {
   };
 
   return (
-    <AuthForm
-      title="Вход"
-      onSubmit={handleLogin}
-      buttonText="Войти"
+    <AuthForm title="Вход" onSubmit={handleLogin} buttonText="Войти"
       fields={[
         {
           name: "username",

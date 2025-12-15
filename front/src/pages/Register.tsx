@@ -16,10 +16,7 @@ const Register = () => {
   };
 
   return (
-    <AuthForm
-      title="Регистрация"
-      onSubmit={handleRegister}
-      buttonText="Зарегистрироваться"
+    <AuthForm title="Регистрация" onSubmit={handleRegister} buttonText="Зарегистрироваться"
       fields={[
         {
           name: "username",

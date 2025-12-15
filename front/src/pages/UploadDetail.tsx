@@ -50,14 +50,7 @@ const UploadDetail = () => {
         ← Назад
       </Button>
       <Heading mb={2}>{data.filename}</Heading>
-      <Text
-        whiteSpace="pre-wrap"
-        border="1px solid #ddd"
-        p={4}
-        borderRadius="md"
-        maxH="70vh"
-        overflowY="auto"
-      >
+      <Text whiteSpace="pre-wrap" border="1px solid #ddd" p={4} borderRadius="md" maxH="70vh" overflowY="auto">
         {data.text || "(Нет текста в PDF)"}
       </Text>
     </Box>
