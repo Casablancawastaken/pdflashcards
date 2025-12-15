@@ -12,7 +12,7 @@ import {
 import { FiUploadCloud, FiCpu } from "react-icons/fi";
 import { uploadPdf, type UploadResponse } from "../api/upload";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+
 
 const PdfUpload = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -24,7 +24,7 @@ const PdfUpload = () => {
 
   const { token } = useAuth();
   const toast = useToast();
-  const navigate = useNavigate();
+
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -76,8 +76,7 @@ const PdfUpload = () => {
       );
 
       if (r.ok) {
-        toast({ title: "Карточки успешно созданы!", status: "success" });
-        navigate(`/cards/${result.id}`);
+        toast({ title: "Генерация завершена", description: "Перейдите в историю", status: "success", duration: 4000 });
       } else {
         const data = await r.json().catch(() => ({}));
         toast({

@@ -54,7 +54,6 @@ async def get_user_uploads(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    
     uploads = (
         db.query(Upload)
         .filter(Upload.user_id == current_user.id)
@@ -66,6 +65,8 @@ async def get_user_uploads(
             "id": u.id,
             "filename": u.filename,
             "timestamp": u.timestamp.isoformat(),
+            "status": u.status,   
         }
         for u in uploads
     ]
+

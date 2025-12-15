@@ -25,6 +25,7 @@ def get_user_uploads(
             "id": u.id,
             "filename": u.filename,
             "timestamp": u.timestamp.isoformat() if u.timestamp else None,
+            "status": u.status,
         }
         for u in uploads
     ]

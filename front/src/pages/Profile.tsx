@@ -10,6 +10,7 @@ import {
   Icon,
   Flex,
   Input,
+  Badge,
 } from "@chakra-ui/react";
 import {
   FiFileText,
@@ -27,9 +28,17 @@ interface UploadItem {
   id: number;
   filename: string;
   timestamp: string;
+  status?: "uploaded" | "generating" | "done" | "error";
 }
 
 const ITEMS_PER_PAGE = 4;
+
+const statusMap = {
+  uploaded: { label: "Загружен", color: "gray" },
+  generating: { label: "Генерируется", color: "yellow" },
+  done: { label: "Готово", color: "green" },
+  error: { label: "Ошибка", color: "red" },
+} as const;
 
 const Profile = () => {
   const { token, user } = useAuth();
@@ -47,17 +56,21 @@ const Profile = () => {
     }
   };
 
-  useEffect(() => {
-    if (token) fetchUploads();
-  }, [token]);
 
+  useEffect(() => {
+    if (!token) return;
+
+    fetchUploads();
+    const interval = setInterval(fetchUploads, 3000);
+
+    return () => clearInterval(interval);
+  }, [token]);
 
   const filteredUploads = useMemo(() => {
     return uploads.filter((u) =>
       u.filename.toLowerCase().includes(search.toLowerCase())
     );
   }, [uploads, search]);
-
 
   const totalPages = Math.ceil(filteredUploads.length / ITEMS_PER_PAGE);
 
@@ -94,7 +107,6 @@ const Profile = () => {
 
   return (
     <Box maxW="950px" mx="auto">
-
       <Box
         bg="white"
         borderWidth="1.5px"
@@ -125,7 +137,6 @@ const Profile = () => {
           </Button>
         </Flex>
 
-
         <HStack mt={4}>
           <Icon as={FiSearch} color="gray.500" />
           <Input
@@ -136,7 +147,6 @@ const Profile = () => {
           />
         </HStack>
       </Box>
-
 
       {filteredUploads.length === 0 && (
         <Box
@@ -158,70 +168,77 @@ const Profile = () => {
         </Box>
       )}
 
-
       <VStack spacing={4} align="stretch">
-        {paginatedUploads.map((u) => (
-          <Box
-            key={u.id}
-            borderWidth="1px"
-            borderRadius="xl"
-            p={5}
-            bg="white"
-            boxShadow="sm"
-          >
-            <Flex justify="space-between" align="center" gap={4} wrap="wrap">
-              <Box minW={0} flex="1">
-                <HStack spacing={2} mb={2}>
-                  <Icon as={FiFileText} color="blue.500" />
-                  <Text fontWeight="bold" isTruncated>
-                    {u.filename}
-                  </Text>
-                </HStack>
+        {paginatedUploads.map((u) => {
+          const statusKey = u.status ?? "uploaded";
+          const status = statusMap[statusKey];
+
+          return (
+            <Box
+              key={u.id}
+              borderWidth="1px"
+              borderRadius="xl"
+              p={5}
+              bg="white"
+              boxShadow="sm"
+            >
+              <Flex justify="space-between" align="center" gap={4} wrap="wrap">
+                <Box minW={0} flex="1">
+                  <HStack spacing={2} mb={2}>
+                    <Icon as={FiFileText} color="blue.500" />
+                    <Text fontWeight="bold" isTruncated>
+                      {u.filename}
+                    </Text>
+                    <Badge colorScheme={status.color}>
+                      {status.label}
+                    </Badge>
+                  </HStack>
+
+                  <HStack spacing={2}>
+                    <Icon as={FiClock} color="gray.500" />
+                    <Text fontSize="sm" color="gray.500">
+                      {new Date(u.timestamp).toLocaleString()}
+                    </Text>
+                  </HStack>
+                </Box>
 
                 <HStack spacing={2}>
-                  <Icon as={FiClock} color="gray.500" />
-                  <Text fontSize="sm" color="gray.500">
-                    {new Date(u.timestamp).toLocaleString()}
-                  </Text>
+                  <Button
+                    leftIcon={<FiEye />}
+                    size="sm"
+                    variant="outline"
+                    colorScheme="blue"
+                    onClick={() => (window.location.href = `/uploads/${u.id}`)}
+                  >
+                    Просмотр
+                  </Button>
+
+                  <Button
+                    leftIcon={<FiCpu />}
+                    size="sm"
+                    variant="outline"
+                    colorScheme="purple"
+                    onClick={() => (window.location.href = `/cards/${u.id}`)}
+                    isDisabled={statusKey !== "done"}
+                  >
+                    Карточки
+                  </Button>
+
+                  <Button
+                    leftIcon={<FiTrash2 />}
+                    size="sm"
+                    variant="outline"
+                    colorScheme="red"
+                    onClick={() => handleDelete(u.id)}
+                  >
+                    Удалить
+                  </Button>
                 </HStack>
-              </Box>
-
-              <HStack spacing={2}>
-                <Button
-                  leftIcon={<FiEye />}
-                  size="sm"
-                  variant="outline"
-                  colorScheme="blue"
-                  onClick={() => (window.location.href = `/uploads/${u.id}`)}
-                >
-                  Просмотр
-                </Button>
-
-                <Button
-                  leftIcon={<FiCpu />}
-                  size="sm"
-                  variant="outline"
-                  colorScheme="purple"
-                  onClick={() => (window.location.href = `/cards/${u.id}`)}
-                >
-                  Карточки
-                </Button>
-
-                <Button
-                  leftIcon={<FiTrash2 />}
-                  size="sm"
-                  variant="outline"
-                  colorScheme="red"
-                  onClick={() => handleDelete(u.id)}
-                >
-                  Удалить
-                </Button>
-              </HStack>
-            </Flex>
-          </Box>
-        ))}
+              </Flex>
+            </Box>
+          );
+        })}
       </VStack>
-
 
       {totalPages > 1 && (
         <HStack justify="center" mt={6} spacing={3}>
