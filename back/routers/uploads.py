@@ -1,34 +1,62 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 import os
 
 from back.db.database import get_db
 from back.models.upload import Upload
 from back.models.user import User
 from back.routers.auth import get_current_user
-
-from fastapi.responses import JSONResponse
 from back.services.pdf_parser import extract_text_from_pdf
+from fastapi.responses import JSONResponse
 
 router = APIRouter(prefix="/uploads", tags=["uploads"])
 
 UPLOAD_DIR = "uploads"
 
+
 @router.get("/")
 def get_user_uploads(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    page: int = Query(1, ge=1),
+    limit: int = Query(4, ge=1, le=50),
+    search: str | None = Query(None),
 ):
-    uploads = db.query(Upload).filter(Upload.user_id == current_user.id).all()
-    return [
-        {
-            "id": u.id,
-            "filename": u.filename,
-            "timestamp": u.timestamp.isoformat() if u.timestamp else None,
-            "status": u.status,
-        }
-        for u in uploads
+    uploads_all = (
+        db.query(Upload)
+        .filter(Upload.user_id == current_user.id)
+        .order_by(Upload.timestamp.desc())
+        .all()
+    )
+
+    if search:
+        s = search.strip().casefold()
+        uploads_all = [
+            u for u in uploads_all
+            if s in u.filename.casefold()
+        ]
+
+    total = len(uploads_all)
+
+    uploads = uploads_all[
+        (page - 1) * limit : page * limit
     ]
+
+    return {
+        "items": [
+            {
+                "id": u.id,
+                "filename": u.filename,
+                "timestamp": u.timestamp.isoformat() if u.timestamp else None,
+                "status": u.status,
+            }
+            for u in uploads
+        ],
+        "page": page,
+        "pages": (total + limit - 1) // limit,
+        "total": total,
+    }
 
 
 @router.delete("/clear")
@@ -61,11 +89,13 @@ def get_upload(
     )
     if not upload:
         raise HTTPException(status_code=404, detail="Файл не найден")
+
     return {
         "id": upload.id,
         "filename": upload.filename,
         "timestamp": upload.timestamp.isoformat() if upload.timestamp else None,
     }
+
 
 @router.get("/{upload_id}/text")
 def get_upload_text(
@@ -83,13 +113,10 @@ def get_upload_text(
 
     file_path = os.path.join(UPLOAD_DIR, upload.filename)
     if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Файл отсутствует на сервере")
+        raise HTTPException(status_code=404, detail="Файл отсутствует")
 
-    try:
-        text = extract_text_from_pdf(file_path, max_pages=None)
-        return JSONResponse({"filename": upload.filename, "text": text})
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ошибка при чтении PDF: {e}")
+    text = extract_text_from_pdf(file_path, max_pages=None)
+    return JSONResponse({"filename": upload.filename, "text": text})
 
 
 @router.delete("/{upload_id}")
@@ -112,4 +139,4 @@ def delete_upload(
 
     db.delete(upload)
     db.commit()
-    return {"message": f"Файл '{upload.filename}' удалён"}
+    return {"message": "Файл удалён"}
