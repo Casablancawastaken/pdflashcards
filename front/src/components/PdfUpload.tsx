@@ -67,7 +67,13 @@ const PdfUpload = () => {
       );
 
       if (r.ok) {
-        toast({ title: "Генерация завершена", description: "Перейдите в историю", status: "success", duration: 4000 });
+        toast({
+          title: "Генерация началась!",
+          description: "Перейдите в историю для отслеживания статуса",
+          status: "info",
+          duration: 5000,
+          isClosable: true,
+        });
       } else {
         const data = await r.json().catch(() => ({}));
         toast({

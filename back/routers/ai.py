@@ -82,6 +82,8 @@ def generate_cards(
 
         upload.status = "done"
         db.commit()
+        db.refresh(upload) 
+        print(f"Генерация завершена upload_id={upload_id}, статус установлен в '{upload.status}'")
 
         return {"created": len(cards)}
 
