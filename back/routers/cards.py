@@ -22,36 +22,3 @@ def get_cards(
 ):
     cards = db.query(Flashcard).filter(Flashcard.upload_id == upload_id).all()
     return cards
-
-
-@router.post("/{upload_id}")
-def create_card(
-    upload_id: int,
-    card: CardCreate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    new_card = Flashcard(
-        upload_id=upload_id,
-        question=card.question,
-        answer=card.answer,
-    )
-    db.add(new_card)
-    db.commit()
-    db.refresh(new_card)
-    return new_card
-
-
-@router.delete("/{card_id}")
-def delete_card(
-    card_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    card = db.query(Flashcard).filter(Flashcard.id == card_id).first()
-    if not card:
-        raise HTTPException(status_code=404, detail="Карточка не найдена")
-
-    db.delete(card)
-    db.commit()
-    return {"message": "Карточка удалена"}
