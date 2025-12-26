@@ -102,7 +102,7 @@ async def stream_uploads_status(
                         last_sent = user_last_statuses[user_id].get(upload.id)
                         
                         if last_sent != current_status:
-                            print(f"🔄 Отправка обновления: upload_id={upload.id}, {last_sent} -> {current_status}")
+                            print(f"Отправка обновления: upload_id={upload.id}, {last_sent} -> {current_status}")
                             yield f"data: {json.dumps({
                                 'upload_id': upload.id,
                                 'status': current_status,

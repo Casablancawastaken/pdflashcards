@@ -3,7 +3,9 @@ import { Box, Button, Heading, VStack, Text, HStack, useToast, Icon, Flex, Input
 import { FiFileText, FiTrash2, FiEye, FiCpu, FiClock, FiSearch, FiChevronLeft, FiChevronRight, FiRefreshCw} from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import { useUploadsStatus } from "../api/useUploadsStatus";
+import { useDebounce } from "../api/useDebounce";
 import { Link } from "react-router-dom"; 
+
 
 interface UploadItem {
   id: number;
@@ -24,7 +26,7 @@ const ITEMS_PER_PAGE = 4;
 
 const statusMap = {
   uploaded: { label: "Загружен", color: "gray" },
-  generating: { label: "Генерация...", color: "yellow" },
+  generating: { label: "Генерация", color: "yellow" },
   done: { label: "Готово", color: "green" },
   error: { label: "Ошибка", color: "red" },
 } as const;
@@ -41,6 +43,8 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
+  const debouncedSearch = useDebounce(search, 750);
+
   const fetchUploads = useCallback(async () => {
     if (!token) return;
 
@@ -49,7 +53,7 @@ const Profile = () => {
     const params = new URLSearchParams({
       page: String(page),
       limit: String(ITEMS_PER_PAGE),
-      search,
+      search: debouncedSearch,
     });
 
     try {
@@ -82,7 +86,7 @@ const Profile = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [token, page, search, toast]);
+  }, [token, page, debouncedSearch, toast]);
 
   const sseHandlers = useMemo(() => ({
     onStatusUpdate: (event: StatusEvent) => {

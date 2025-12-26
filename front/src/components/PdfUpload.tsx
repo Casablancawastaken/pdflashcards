@@ -68,8 +68,8 @@ const PdfUpload = () => {
 
       if (r.ok) {
         toast({
-          title: "Генерация началась!",
-          description: "Перейдите в историю для отслеживания статуса",
+          title: "Генерация завершена!",
+          description: "Перейдите в историю для просмотра",
           status: "info",
           duration: 5000,
           isClosable: true,
