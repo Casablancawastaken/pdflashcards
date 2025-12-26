@@ -76,27 +76,6 @@ def clear_user_uploads(
     return {"message": "История загрузок успешно очищена"}
 
 
-@router.get("/{upload_id}")
-def get_upload(
-    upload_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    upload = (
-        db.query(Upload)
-        .filter(Upload.id == upload_id, Upload.user_id == current_user.id)
-        .first()
-    )
-    if not upload:
-        raise HTTPException(status_code=404, detail="Файл не найден")
-
-    return {
-        "id": upload.id,
-        "filename": upload.filename,
-        "timestamp": upload.timestamp.isoformat() if upload.timestamp else None,
-    }
-
-
 @router.get("/{upload_id}/text")
 def get_upload_text(
     upload_id: int,

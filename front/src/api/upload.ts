@@ -1,7 +1,6 @@
 export interface UploadResponse {
   id: number;
   filename: string;
-  preview: string;
 }
 
 export async function uploadPdf(file: File, token: string): Promise<UploadResponse> {

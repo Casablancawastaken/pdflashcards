@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from fastapi import APIRouter, UploadFile, File, Depends
 from sqlalchemy.orm import Session
 import os
 import shutil
@@ -7,7 +7,6 @@ from datetime import datetime
 from back.db.database import get_db
 from back.models.user import User
 from back.models.upload import Upload
-from back.services.pdf_parser import extract_text_from_pdf
 from back.routers.auth import get_current_user
 
 router = APIRouter(tags=["uploads"])
@@ -22,16 +21,10 @@ async def upload_file(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Загрузка PDF, сохранение и извлечение текста."""
     file_path = os.path.join(UPLOAD_DIR, file.filename)
 
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-
-    try:
-        text = extract_text_from_pdf(file_path)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Ошибка при чтении PDF: {e}")
 
     upload_entry = Upload(
         user_id=current_user.id,
@@ -44,6 +37,5 @@ async def upload_file(
 
     return {
         "filename": file.filename,
-        "preview": text[:1000],  
         "id": upload_entry.id,
     }
