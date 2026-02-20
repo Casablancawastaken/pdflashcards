@@ -6,16 +6,15 @@ import { useAuth } from "../context/AuthContext";
 
 interface ProtectedRouteProps {
   children: ReactNode;
+  roles?: string[];
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles }) => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate("/login");
-    }
+    if (!loading && !user) navigate("/login");
   }, [user, loading, navigate]);
 
   if (loading) {
@@ -26,7 +25,17 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  return <>{user ? children : null}</>;
+  if (!user) return null;
+
+  if (roles && !roles.includes(user.role)) {
+    return (
+      <Box p={8} textAlign="center">
+        <Text color="red.500">403: Недостаточно прав</Text>
+      </Box>
+    );
+  }
+
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Box, Flex, Button, Text, Spacer, HStack, Menu, MenuButton, MenuList, MenuItem } from "@chakra-ui/react";
 import { ChevronDownIcon } from "@chakra-ui/icons";
-import { FiLogOut, FiSettings, FiUser, FiCpu, FiClock } from "react-icons/fi";
+import { FiLogOut, FiSettings, FiUser, FiCpu, FiClock, FiShield } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 
 const Header = () => {
@@ -38,6 +38,13 @@ const Header = () => {
               <MenuItem as={Link} to="/settings" icon={<FiSettings />} bg="blue.600" _hover={{ bg: "blue.700" }}>
                 Настройки
               </MenuItem>
+
+              {/* ---- ADMIN ONLY ---- */}
+              {user.role === "admin" && (
+                <MenuItem as={Link} to="/admin" icon={<FiShield />} bg="blue.600" _hover={{ bg: "blue.700" }}>
+                  Admin
+                </MenuItem>
+              )}
 
               <MenuItem icon={<FiLogOut />} bg="blue.600" _hover={{ bg: "red.500" }} onClick={logout}>
                 Выйти

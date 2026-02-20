@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from datetime import timedelta
 
 from back.db.database import get_db, Base, engine, SessionLocal
-from back.models.user import User
+from back.models.user import User, UserRole  # <-- важно
 from back.schemas.user import UserCreate, UserLogin, UserOut
 from back.services.auth import hash_password, verify_password, create_access_token, SECRET_KEY, ALGORITHM
 
@@ -34,13 +34,21 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
     finally:
         db.close()
 
+def require_admin(current_user: User = Depends(get_current_user)) -> User:
+    if current_user.role != UserRole.admin:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    return current_user
+
 @router.post("/register", response_model=UserOut)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
     if db.query(User).filter(User.username == user.username).first():
         raise HTTPException(status_code=400, detail="Пользователь с таким именем уже существует")
 
+    is_first_user = db.query(User).count() == 0
+    role = UserRole.admin if is_first_user else UserRole.user
+
     hashed_pw = hash_password(user.password)
-    db_user = User(username=user.username, email=user.email, hashed_password=hashed_pw)
+    db_user = User(username=user.username, email=user.email, hashed_password=hashed_pw, role=role)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -73,3 +81,22 @@ def change_password(
     db.add(current_user)
     db.commit()
     return {"message": "Пароль успешно изменён"}
+
+# --- ADMIN ONLY ---
+@router.put("/admin/set-role")
+def admin_set_role(
+    username: str = Body(...),
+    role: str = Body(...),
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    target = db.query(User).filter(User.username == username).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    if role not in [UserRole.user.value, UserRole.admin.value]:
+        raise HTTPException(status_code=400, detail="Некорректная роль")
+
+    target.role = UserRole(role)
+    db.commit()
+    return {"message": "Роль обновлена", "username": target.username, "role": target.role.value}

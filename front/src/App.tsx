@@ -10,6 +10,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import UploadDetail from "./pages/UploadDetail";
 import Settings from "./pages/Settings";
 import CardsPage from "./pages/CardsPage";
+import Admin from "./pages/Admin";
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Route path="/uploads/:id" element={<UploadDetail />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/cards/:id" element={<CardsPage />} />
+          <Route path="/admin" element={<ProtectedRoute roles={["admin"]}><Admin /></ProtectedRoute>}/>
         </Routes>
       </Container>
     </>

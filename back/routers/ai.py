@@ -3,8 +3,9 @@ from sqlalchemy.orm import Session
 import os, json, re, requests
 
 from back.db.database import get_db
-from back.models.upload import Upload
+from back.models.upload import Upload, UploadStatus
 from back.models.flashcards import Flashcard
+from back.models.user import UserRole
 from back.routers.auth import get_current_user
 from back.services.pdf_parser import extract_text_from_pdf
 from back.services.ai_prompt import build_cards_prompt
@@ -21,15 +22,15 @@ def generate_cards(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    upload = db.query(Upload).filter(
-        Upload.id == upload_id,
-        Upload.user_id == current_user.id
-    ).first()
-
+    
+    upload = db.query(Upload).filter(Upload.id == upload_id).first()
     if not upload:
         raise HTTPException(status_code=404, detail="Файл не найден")
 
-    upload.status = "generating"
+    if upload.user_id != current_user.id and current_user.role != UserRole.admin:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    upload.status = UploadStatus.generating
     db.commit()
 
     try:
@@ -74,20 +75,22 @@ def generate_cards(
         parsed = json.loads(match.group(0))
         cards = parsed.get("cards", [])
 
+        created = 0
         for c in cards:
-            q = c.get("q", "").strip()
-            a = c.get("a", "").strip()
+            q = (c.get("q") or "").strip()
+            a = (c.get("a") or "").strip()
             if q and a:
                 db.add(Flashcard(upload_id=upload_id, question=q, answer=a))
+                created += 1
 
-        upload.status = "done"
+        upload.status = UploadStatus.done
         db.commit()
-        db.refresh(upload) 
-        print(f"Генерация завершена upload_id={upload_id}, статус установлен в '{upload.status}'")
+        db.refresh(upload)
+        print(f"Генерация завершена upload_id={upload_id}, статус='{upload.status.value}'")
 
-        return {"created": len(cards)}
+        return {"created": created}
 
     except Exception:
-        upload.status = "error"
+        upload.status = UploadStatus.error
         db.commit()
         raise
