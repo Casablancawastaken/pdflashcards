@@ -3,7 +3,7 @@ import { Box, Button, Input, Text, VStack, Heading, Icon, useToast } from "@chak
 import { FiUploadCloud, FiCpu } from "react-icons/fi";
 import { uploadPdf, type UploadResponse } from "../api/upload";
 import { useAuth } from "../context/AuthContext";
-
+import { apiFetch } from "../api/client";
 
 const PdfUpload = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -13,9 +13,8 @@ const PdfUpload = () => {
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  const { token } = useAuth();
+  const { token, refreshAccessToken } = useAuth();
   const toast = useToast();
-
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -41,7 +40,7 @@ const PdfUpload = () => {
     setResult(null);
 
     try {
-      const r = await uploadPdf(file, token);
+      const r = await uploadPdf(file, token, refreshAccessToken);
       setResult(r);
       toast({ title: "PDF успешно загружен", status: "success" });
     } catch (e) {
@@ -53,17 +52,15 @@ const PdfUpload = () => {
   };
 
   const generateAI = async () => {
-    if (!result?.id) return;
+    if (!result?.id || !token) return;
 
     setAiLoading(true);
 
     try {
-      const r = await fetch(
-        `http://127.0.0.1:8000/ai/generate_cards/${result.id}`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        }
+      const r = await apiFetch(
+        `/ai/generate_cards/${result.id}`,
+        { method: "POST", accessToken: token },
+        refreshAccessToken
       );
 
       if (r.ok) {
@@ -115,12 +112,22 @@ const PdfUpload = () => {
         <Heading size="lg" mb={2}>
           Генерация карточек из PDF
         </Heading>
-        <Text color="gray.600">
-          Загрузите PDF-файл — мы создадим учебные карточки автоматически
-        </Text>
+        <Text color="gray.600">Загрузите PDF-файл — мы создадим учебные карточки автоматически</Text>
       </Box>
 
-      <Box borderWidth="2px" borderStyle="dashed" borderColor={isDragging ? "blue.500" : "blue.300"} borderRadius="xl" p={10} bg={isDragging ? "blue.50" : "white"} textAlign="center" transition="all 0.2s" onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+      <Box
+        borderWidth="2px"
+        borderStyle="dashed"
+        borderColor={isDragging ? "blue.500" : "blue.300"}
+        borderRadius="xl"
+        p={10}
+        bg={isDragging ? "blue.50" : "white"}
+        textAlign="center"
+        transition="all 0.2s"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <VStack spacing={4}>
           <Icon as={FiUploadCloud} boxSize={12} color="blue.500" />
 
@@ -132,7 +139,7 @@ const PdfUpload = () => {
             Поддерживается только формат PDF
           </Text>
 
-          <Input type="file" accept="application/pdf" display="none" id="pdf-upload" onChange={onFileChange}/>
+          <Input type="file" accept="application/pdf" display="none" id="pdf-upload" onChange={onFileChange} />
 
           <Button as="label" htmlFor="pdf-upload" colorScheme="blue" variant="outline" cursor="pointer">
             Выбрать файл
@@ -154,7 +161,16 @@ const PdfUpload = () => {
 
       {result && (
         <Box textAlign="center">
-          <Button colorScheme="blue" size="lg" px={16} py={7} fontSize="lg" leftIcon={<FiCpu />} onClick={generateAI} isLoading={aiLoading}>
+          <Button
+            colorScheme="blue"
+            size="lg"
+            px={16}
+            py={7}
+            fontSize="lg"
+            leftIcon={<FiCpu />}
+            onClick={generateAI}
+            isLoading={aiLoading}
+          >
             Сгенерировать карточки
           </Button>
         </Box>

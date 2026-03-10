@@ -3,6 +3,7 @@ import { Box, Heading, Text, Button, HStack, Center, Spinner, Icon, Flex } from 
 import { FiChevronLeft, FiChevronRight, FiArrowLeft } from "react-icons/fi";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { apiFetch } from "../api/client";
 
 interface CardItem {
   id: number;
@@ -13,7 +14,7 @@ interface CardItem {
 const CardsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { token, refreshAccessToken } = useAuth();
 
   const [cards, setCards] = useState<CardItem[]>([]);
   const [index, setIndex] = useState(0);
@@ -23,9 +24,7 @@ const CardsPage = () => {
 
   useEffect(() => {
     const fetchCards = async () => {
-      const r = await fetch(`http://127.0.0.1:8000/cards/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const r = await apiFetch(`/cards/${id}`, { accessToken: token }, refreshAccessToken);
       if (r.ok) {
         setCards(await r.json());
       }
@@ -33,8 +32,7 @@ const CardsPage = () => {
     };
 
     if (token) fetchCards();
-  }, [token, id]);
-
+  }, [token, id, refreshAccessToken]);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -83,7 +81,6 @@ const CardsPage = () => {
   return (
     <Center py={10}>
       <Box w="100%" maxW="900px" bg="white" borderRadius="2xl" boxShadow="lg" borderWidth="1px" p={8}>
-
         <Flex justify="space-between" align="center" mb={6}>
           <Button leftIcon={<FiArrowLeft />} variant="ghost" onClick={() => navigate("/profile")}>
             В историю
@@ -99,25 +96,67 @@ const CardsPage = () => {
           <Box w="120px" />
         </Flex>
 
-
-        <Box key={index} minH="340px" onClick={() => setShowAnswer((v) => !v)}
-          sx={{perspective: "1000px", animation: "fadeSlide 0.35s ease", "@keyframes fadeSlide": {
-              from: {opacity: 0, transform: direction === "right" ? "translateX(30px)" : "translateX(-30px)"},
-              to: {opacity: 1, transform: "translateX(0)"},
+        <Box
+          key={index}
+          minH="340px"
+          onClick={() => setShowAnswer((v) => !v)}
+          sx={{
+            perspective: "1000px",
+            animation: "fadeSlide 0.35s ease",
+            "@keyframes fadeSlide": {
+              from: {
+                opacity: 0,
+                transform: direction === "right" ? "translateX(30px)" : "translateX(-30px)",
+              },
+              to: { opacity: 1, transform: "translateX(0)" },
             },
           }}
         >
-          <Box borderWidth="2px" borderColor="blue.400" borderRadius="2xl" h="340px" cursor="pointer" display="flex" alignItems="center" justifyContent="center" textAlign="center"
-            sx={{position: "relative", transformStyle: "preserve-3d", transition: "transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)", transform: showAnswer ? "rotateX(180deg)" : "rotateX(0deg)"}}>
-
-            <Box sx={{position: "absolute", inset: 0, backfaceVisibility: "hidden", display: "flex", alignItems: "center", justifyContent: "center", p: 10}}>
+          <Box
+            borderWidth="2px"
+            borderColor="blue.400"
+            borderRadius="2xl"
+            h="340px"
+            cursor="pointer"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            textAlign="center"
+            sx={{
+              position: "relative",
+              transformStyle: "preserve-3d",
+              transition: "transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
+              transform: showAnswer ? "rotateX(180deg)" : "rotateX(0deg)",
+            }}
+          >
+            <Box
+              sx={{
+                position: "absolute",
+                inset: 0,
+                backfaceVisibility: "hidden",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                p: 10,
+              }}
+            >
               <Text fontSize="2xl" fontWeight="medium">
                 {card.question}
               </Text>
             </Box>
 
-
-            <Box sx={{position: "absolute", inset: 0, backfaceVisibility: "hidden", transform: "rotateX(180deg)", display: "flex", alignItems: "center", justifyContent: "center", p: 10}}>
+            <Box
+              sx={{
+                position: "absolute",
+                inset: 0,
+                backfaceVisibility: "hidden",
+                transform: "rotateX(180deg)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                p: 10,
+              }}
+            >
               <Text fontSize="xl" color="gray.700">
                 {card.answer}
               </Text>
@@ -126,9 +165,8 @@ const CardsPage = () => {
         </Box>
 
         <Text mt={4} fontSize="sm" color="gray.500" textAlign="center">
-          Клик по карточке или пробел — показать ответ |  ← → — переключить карточку 
+          Клик по карточке или пробел — показать ответ | ← → — переключить карточку
         </Text>
-
 
         <HStack justify="space-between" mt={8}>
           <Button onClick={prev} isDisabled={index === 0} variant="outline">

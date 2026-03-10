@@ -1,6 +1,19 @@
 import { useState, useEffect } from "react";
-import { Box, Button, Input, VStack, Heading, Text, Divider, useToast, Spinner, Center, SimpleGrid } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Input,
+  VStack,
+  Heading,
+  Text,
+  Divider,
+  useToast,
+  Spinner,
+  Center,
+  SimpleGrid,
+} from "@chakra-ui/react";
 import { useAuth } from "../context/AuthContext";
+import { apiFetch } from "../api/client";
 
 interface UserProfile {
   username: string;
@@ -9,7 +22,7 @@ interface UserProfile {
 }
 
 const Settings = () => {
-  const { token } = useAuth();
+  const { token, refreshAccessToken } = useAuth();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [oldPassword, setOldPassword] = useState("");
@@ -24,9 +37,7 @@ const Settings = () => {
     const loadProfile = async () => {
       if (!token) return;
       try {
-        const r = await fetch("http://127.0.0.1:8000/auth/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const r = await apiFetch(`/auth/me`, { accessToken: token }, refreshAccessToken);
         if (r.ok) {
           setProfile(await r.json());
         }
@@ -35,7 +46,7 @@ const Settings = () => {
       }
     };
     loadProfile();
-  }, [token]);
+  }, [token, refreshAccessToken]);
 
   const changePassword = async () => {
     if (newPassword !== repeatPassword) {
@@ -45,17 +56,19 @@ const Settings = () => {
 
     setLoading(true);
     try {
-      const r = await fetch("http://127.0.0.1:8000/auth/change-password", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const r = await apiFetch(
+        `/auth/change-password`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            old_password: oldPassword,
+            new_password: newPassword,
+          }),
+          accessToken: token,
         },
-        body: JSON.stringify({
-          old_password: oldPassword,
-          new_password: newPassword,
-        }),
-      });
+        refreshAccessToken
+      );
 
       if (r.ok) {
         toast({ title: "Пароль изменён", status: "success" });
@@ -82,14 +95,12 @@ const Settings = () => {
   return (
     <Center py={12}>
       <Box w="100%" maxW="600px" bg="white" borderRadius="2xl" boxShadow="lg" borderWidth="1px" p={10}>
-
         <Heading size="lg" textAlign="center" mb={2}>
           Настройки аккаунта
         </Heading>
         <Text textAlign="center" color="gray.500" mb={8}>
           Управление профилем и безопасностью
         </Text>
-
 
         {profile && (
           <>
@@ -117,15 +128,29 @@ const Settings = () => {
           </>
         )}
 
- 
         <Heading size="sm" mb={4}>
           Смена пароля
         </Heading>
 
         <VStack spacing={4}>
-          <Input placeholder="Текущий пароль" type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)}/>
-          <Input placeholder="Новый пароль" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}/>
-          <Input placeholder="Повторите новый пароль" type="password" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)}/>
+          <Input
+            placeholder="Текущий пароль"
+            type="password"
+            value={oldPassword}
+            onChange={(e) => setOldPassword(e.target.value)}
+          />
+          <Input
+            placeholder="Новый пароль"
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+          />
+          <Input
+            placeholder="Повторите новый пароль"
+            type="password"
+            value={repeatPassword}
+            onChange={(e) => setRepeatPassword(e.target.value)}
+          />
 
           <Button mt={4} size="lg" w="100%" colorScheme="blue" onClick={changePassword} isLoading={loading}>
             Обновить пароль

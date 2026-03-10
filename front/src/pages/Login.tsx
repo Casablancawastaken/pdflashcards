@@ -10,11 +10,15 @@ const Login = () => {
       username: values.username,
       password: values.password,
     });
-    await login(res.access_token);
+
+    await login({ access_token: res.access_token, refresh_token: res.refresh_token });
   };
 
   return (
-    <AuthForm title="Вход" onSubmit={handleLogin} buttonText="Войти"
+    <AuthForm
+      title="Вход"
+      onSubmit={handleLogin}
+      buttonText="Войти"
       fields={[
         {
           name: "username",

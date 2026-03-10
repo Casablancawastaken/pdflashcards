@@ -3,9 +3,13 @@ from sqlalchemy.orm import Session
 from datetime import timedelta
 
 from back.db.database import get_db, Base, engine, SessionLocal
-from back.models.user import User, UserRole  # <-- важно
+from back.models.user import User, UserRole
+from back.models.refresh_token import RefreshToken  
 from back.schemas.user import UserCreate, UserLogin, UserOut
 from back.services.auth import hash_password, verify_password, create_access_token, SECRET_KEY, ALGORITHM
+
+from back.repositories.refresh_tokens import RefreshTokenRepository
+from back.services.sessions import SessionService
 
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
@@ -15,6 +19,11 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 Base.metadata.create_all(bind=engine)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+
+
+def get_session_service() -> SessionService:
+    return SessionService(RefreshTokenRepository())
+
 
 def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
     try:
@@ -34,10 +43,12 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
     finally:
         db.close()
 
+
 def require_admin(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role != UserRole.admin:
         raise HTTPException(status_code=403, detail="Forbidden")
     return current_user
+
 
 @router.post("/register", response_model=UserOut)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
@@ -54,18 +65,47 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user)
     return db_user
 
+
 @router.post("/login")
-def login(user: UserLogin, db: Session = Depends(get_db)):
+def login(
+    user: UserLogin,
+    db: Session = Depends(get_db),
+    sessions: SessionService = Depends(get_session_service),
+):
     db_user = db.query(User).filter(User.username == user.username).first()
     if not db_user or not verify_password(user.password, db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Неверное имя пользователя или пароль")
 
-    access_token = create_access_token({"sub": db_user.username}, timedelta(minutes=60))
-    return {"access_token": access_token, "token_type": "bearer"}
+    return sessions.issue_tokens(db, db_user)
+
+
+@router.post("/refresh")
+def refresh_tokens(
+    refresh_token: str = Body(..., embed=True),
+    db: Session = Depends(get_db),
+    sessions: SessionService = Depends(get_session_service),
+):
+    try:
+        return sessions.refresh(db, refresh_token)
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+
+
+@router.post("/logout")
+def logout(
+    refresh_token: str = Body(..., embed=True),
+    all_sessions: bool = Body(False, embed=True),
+    db: Session = Depends(get_db),
+    sessions: SessionService = Depends(get_session_service),
+):
+    sessions.logout(db, refresh_token, all_sessions=all_sessions)
+    return {"message": "Logged out"}
+
 
 @router.get("/me", response_model=UserOut)
 def read_current_user(current_user: User = Depends(get_current_user)):
     return current_user
+
 
 @router.put("/change-password")
 def change_password(
@@ -81,6 +121,7 @@ def change_password(
     db.add(current_user)
     db.commit()
     return {"message": "Пароль успешно изменён"}
+
 
 # --- ADMIN ONLY ---
 @router.put("/admin/set-role")

@@ -1,19 +1,27 @@
+import { apiFetch } from "./client";
+
 export interface UploadResponse {
   id: number;
   filename: string;
 }
 
-export async function uploadPdf(file: File, token: string): Promise<UploadResponse> {
+export async function uploadPdf(
+  file: File,
+  accessToken: string,
+  refresh: () => Promise<boolean>
+): Promise<UploadResponse> {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch("http://127.0.0.1:8000/upload-pdf", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`, 
+  const response = await apiFetch(
+    "/upload-pdf",
+    {
+      method: "POST",
+      body: formData,
+      accessToken,
     },
-    body: formData,
-  });
+    refresh
+  );
 
   if (!response.ok) {
     throw new Error("Ошибка при загрузке PDF");

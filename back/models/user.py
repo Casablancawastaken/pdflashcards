@@ -3,9 +3,11 @@ from sqlalchemy.orm import relationship
 import enum
 from back.db.database import Base
 
+
 class UserRole(str, enum.Enum):
     user = "user"
     admin = "admin"
+
 
 class User(Base):
     __tablename__ = "users"
@@ -18,3 +20,5 @@ class User(Base):
     role = Column(Enum(UserRole), default=UserRole.user, nullable=False)
 
     uploads = relationship("Upload", back_populates="user")
+
+    refresh_tokens = relationship("RefreshToken", backref="user", cascade="all, delete-orphan")
