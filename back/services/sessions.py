@@ -9,7 +9,7 @@ from back.models.user import User
 from back.services.auth import SECRET_KEY, ALGORITHM, create_access_token
 
 
-ACCESS_TTL_MINUTES = 0.2
+ACCESS_TTL_MINUTES = 60
 REFRESH_TTL_DAYS = 7
 
 

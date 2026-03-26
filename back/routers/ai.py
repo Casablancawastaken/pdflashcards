@@ -1,14 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-import os, json, re, requests
+import json
+import re
+import requests
 
 from back.db.database import get_db
 from back.models.upload import Upload, UploadStatus
 from back.models.flashcards import Flashcard
 from back.models.user import UserRole
 from back.routers.auth import get_current_user
-from back.services.pdf_parser import extract_text_from_pdf
+from back.services.pdf_parser import extract_text_from_pdf_bytes
 from back.services.ai_prompt import build_cards_prompt
+from back.services.storage import download_bytes
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -22,7 +25,6 @@ def generate_cards(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    
     upload = db.query(Upload).filter(Upload.id == upload_id).first()
     if not upload:
         raise HTTPException(status_code=404, detail="Файл не найден")
@@ -34,11 +36,9 @@ def generate_cards(
     db.commit()
 
     try:
-        file_path = os.path.join("uploads", upload.filename)
-        if not os.path.exists(file_path):
-            raise HTTPException(status_code=404, detail="PDF отсутствует")
+        file_bytes = download_bytes(upload.object_key)
 
-        text = extract_text_from_pdf(file_path, max_pages=5)
+        text = extract_text_from_pdf_bytes(file_bytes, max_pages=5)
         if not text.strip():
             raise HTTPException(status_code=400, detail="Нет текста")
 
@@ -54,7 +54,6 @@ def generate_cards(
             stream=True,
             timeout=300,
         ) as resp:
-
             if resp.status_code != 200:
                 raise HTTPException(status_code=502, detail="Ошибка модели")
 
@@ -65,7 +64,7 @@ def generate_cards(
                 try:
                     data = json.loads(line.decode("utf-8"))
                     full_text += data.get("message", {}).get("content", "")
-                except:
+                except Exception:
                     pass
 
         match = re.search(r"\{.*\}", full_text, re.DOTALL)
@@ -74,6 +73,8 @@ def generate_cards(
 
         parsed = json.loads(match.group(0))
         cards = parsed.get("cards", [])
+
+        db.query(Flashcard).filter(Flashcard.upload_id == upload_id).delete()
 
         created = 0
         for c in cards:
@@ -86,7 +87,6 @@ def generate_cards(
         upload.status = UploadStatus.done
         db.commit()
         db.refresh(upload)
-        print(f"Генерация завершена upload_id={upload_id}, статус='{upload.status.value}'")
 
         return {"created": created}
 

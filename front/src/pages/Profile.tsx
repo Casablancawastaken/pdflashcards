@@ -1,48 +1,25 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import {
-  Box,
-  Button,
-  Heading,
-  VStack,
-  Text,
-  HStack,
-  useToast,
-  Icon,
-  Flex,
-  Input,
-  Badge,
-  Spinner,
-} from "@chakra-ui/react";
-import {
-  FiFileText,
-  FiTrash2,
-  FiEye,
-  FiCpu,
-  FiClock,
-  FiSearch,
-  FiChevronLeft,
-  FiChevronRight,
-  FiRefreshCw,
-} from "react-icons/fi";
+import { Box, Button, Heading, VStack, Text, HStack, useToast, Icon, Flex, Input, Badge, Spinner, Select, SimpleGrid } from "@chakra-ui/react";
+import { FiFileText, FiTrash2, FiEye, FiCpu, FiClock, FiSearch, FiChevronLeft, FiChevronRight, FiRefreshCw } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import { useUploadsStatus } from "../api/useUploadsStatus";
-import { useDebounce } from "../api/useDebounce";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { apiFetch } from "../api/client";
 
 interface UploadItem {
   id: number;
   filename: string;
+  title: string;
   timestamp: string;
   status: "uploaded" | "generating" | "done" | "error";
+  size: number;
+  content_type: string;
 }
 
 interface StatusEvent {
   upload_id: number;
   status: "uploaded" | "generating" | "done" | "error";
   type: "initial" | "status_update" | "final" | "error";
-  finished?: boolean;
-  error?: string;
 }
 
 const ITEMS_PER_PAGE = 4;
@@ -54,38 +31,54 @@ const statusMap = {
   error: { label: "Ошибка", color: "red" },
 } as const;
 
+const formatSize = (size: number) => {
+  if (size < 1024) return `${size} Б`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} КБ`;
+  return `${(size / (1024 * 1024)).toFixed(1)} МБ`;
+};
+
 const Profile = () => {
   const { token, user, refreshAccessToken } = useAuth();
   const toast = useToast();
   const toastIdRef = useRef<string | number | undefined>(undefined);
 
-  const [uploads, setUploads] = useState<UploadItem[]>([]);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [pages, setPages] = useState(1);
+  const [allUploads, setAllUploads] = useState<UploadItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const debouncedSearch = useDebounce(search, 750);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const search = searchParams.get("search") || "";
+  const statusFilter = searchParams.get("status") || "all";
+  const dateFrom = searchParams.get("dateFrom") || "";
+  const dateTo = searchParams.get("dateTo") || "";
+  const sortBy = searchParams.get("sortBy") || "timestamp_desc";
+  const page = Number(searchParams.get("page") || "1");
+
+  const setParam = (key: string, value: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (value) next.set(key, value);
+    else next.delete(key);
+
+    if (key !== "page") next.set("page", "1");
+    setSearchParams(next);
+  };
 
   const fetchUploads = useCallback(async () => {
     if (!token) return;
 
     setLoading(true);
 
-    const params = new URLSearchParams({
-      page: String(page),
-      limit: String(ITEMS_PER_PAGE),
-      search: debouncedSearch,
-    });
-
     try {
-      const r = await apiFetch(`/uploads/?${params}`, { accessToken: token }, refreshAccessToken);
+      const r = await apiFetch(
+        `/uploads/?page=1&limit=1000&sort_by=timestamp&order=desc`,
+        { accessToken: token },
+        refreshAccessToken
+      );
 
       if (r.ok) {
         const data = await r.json();
-        setUploads(data.items);
-        setPages(data.pages);
+        setAllUploads(data.items);
       } else {
         toast({
           title: "Ошибка загрузки",
@@ -95,7 +88,6 @@ const Profile = () => {
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Неизвестная ошибка";
-
       toast({
         title: "Ошибка сети",
         description: `Проверьте подключение: ${errorMessage}`,
@@ -105,12 +97,12 @@ const Profile = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [token, page, debouncedSearch, toast, refreshAccessToken]);
+  }, [token, toast, refreshAccessToken]);
 
   const sseHandlers = useMemo(
     () => ({
       onStatusUpdate: (event: StatusEvent) => {
-        setUploads((prev) =>
+        setAllUploads((prev) =>
           prev.map((upload) => (upload.id === event.upload_id ? { ...upload, status: event.status } : upload))
         );
 
@@ -121,33 +113,24 @@ const Profile = () => {
 
           toastIdRef.current = toast({
             title: "Генерация завершена!",
-            description: `Файл готов к просмотру`,
+            description: "Файл готов к просмотру",
             status: "success",
             duration: 3000,
             isClosable: true,
-            position: "bottom-right" as const,
+            position: "bottom-right",
           });
         } else if (event.status === "error") {
           if (toastIdRef.current) toast.close(toastIdRef.current);
 
           toastIdRef.current = toast({
             title: "Ошибка генерации",
-            description: `Не удалось сгенерировать карточки`,
+            description: "Не удалось сгенерировать карточки",
             status: "error",
             duration: 3000,
             isClosable: true,
-            position: "bottom-right" as const,
+            position: "bottom-right",
           });
         }
-      },
-      onConnect: () => {
-        console.log("SSE подключено - отслеживаем статусы в реальном времени");
-      },
-      onError: (error: string) => {
-        console.error("SSE ошибка:", error);
-      },
-      onDisconnect: () => {
-        console.log("SSE отключено");
       },
     }),
     [toast]
@@ -158,6 +141,66 @@ const Profile = () => {
   useEffect(() => {
     fetchUploads();
   }, [fetchUploads]);
+
+  const filteredUploads = useMemo(() => {
+    let data = [...allUploads];
+
+    const searchLower = search.trim().toLowerCase();
+    if (searchLower) {
+      data = data.filter(
+        (u) =>
+          u.filename.toLowerCase().includes(searchLower) ||
+          u.title.toLowerCase().includes(searchLower)
+      );
+    }
+
+    if (statusFilter !== "all") {
+      data = data.filter((u) => u.status === statusFilter);
+    }
+
+    if (dateFrom) {
+      const from = new Date(`${dateFrom}T00:00:00`).getTime();
+      data = data.filter((u) => new Date(u.timestamp).getTime() >= from);
+    }
+
+    if (dateTo) {
+      const to = new Date(`${dateTo}T23:59:59`).getTime();
+      data = data.filter((u) => new Date(u.timestamp).getTime() <= to);
+    }
+
+    switch (sortBy) {
+      case "timestamp_asc":
+        data.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        break;
+      case "title_asc":
+        data.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case "title_desc":
+        data.sort((a, b) => b.title.localeCompare(a.title));
+        break;
+      case "size_asc":
+        data.sort((a, b) => a.size - b.size);
+        break;
+      case "size_desc":
+        data.sort((a, b) => b.size - a.size);
+        break;
+      default:
+        data.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    }
+
+    return data;
+  }, [allUploads, search, statusFilter, dateFrom, dateTo, sortBy]);
+
+  const pages = Math.max(1, Math.ceil(filteredUploads.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(page, pages);
+  const uploads = filteredUploads.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    if (page !== safePage) {
+      setParam("page", String(safePage));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, safePage]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -181,9 +224,10 @@ const Profile = () => {
 
     if (r.ok) {
       toast({ title: "История очищена", status: "success" });
-      setUploads([]);
-      setPage(1);
-      setPages(1);
+      setAllUploads([]);
+      const next = new URLSearchParams(searchParams);
+      next.set("page", "1");
+      setSearchParams(next);
     }
   };
 
@@ -227,25 +271,59 @@ const Profile = () => {
               colorScheme="red"
               variant="outline"
               onClick={handleClearAll}
-              isDisabled={uploads.length === 0}
+              isDisabled={allUploads.length === 0}
             >
               Очистить историю
             </Button>
           </HStack>
         </Flex>
 
-        <HStack mt={4}>
-          <Icon as={FiSearch} color="gray.500" />
-          <Input
-            placeholder="Поиск по имени файла"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            maxW="300px"
-          />
-        </HStack>
+        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mt={4}>
+          <Box>
+            <Text mb={1} fontSize="sm" color="gray.600">Поиск</Text>
+            <HStack>
+              <Icon as={FiSearch} color="gray.500" />
+              <Input
+                placeholder="Поиск по title или имени файла"
+                value={search}
+                onChange={(e) => setParam("search", e.target.value)}
+              />
+            </HStack>
+          </Box>
+
+          <Box>
+            <Text mb={1} fontSize="sm" color="gray.600">Статус</Text>
+            <Select value={statusFilter} onChange={(e) => setParam("status", e.target.value)}>
+              <option value="all">Все</option>
+              <option value="uploaded">Загружен</option>
+              <option value="generating">Генерация</option>
+              <option value="done">Готово</option>
+              <option value="error">Ошибка</option>
+            </Select>
+          </Box>
+
+          <Box>
+            <Text mb={1} fontSize="sm" color="gray.600">Дата от</Text>
+            <Input type="date" value={dateFrom} onChange={(e) => setParam("dateFrom", e.target.value)} />
+          </Box>
+
+          <Box>
+            <Text mb={1} fontSize="sm" color="gray.600">Дата до</Text>
+            <Input type="date" value={dateTo} onChange={(e) => setParam("dateTo", e.target.value)} />
+          </Box>
+
+          <Box>
+            <Text mb={1} fontSize="sm" color="gray.600">Сортировка</Text>
+            <Select value={sortBy} onChange={(e) => setParam("sortBy", e.target.value)}>
+              <option value="timestamp_desc">Сначала новые</option>
+              <option value="timestamp_asc">Сначала старые</option>
+              <option value="title_asc">Название A-Я</option>
+              <option value="title_desc">Название Я-A</option>
+              <option value="size_asc">Размер по возрастанию</option>
+              <option value="size_desc">Размер по убыванию</option>
+            </Select>
+          </Box>
+        </SimpleGrid>
       </Box>
 
       {loading && !refreshing && (
@@ -266,9 +344,9 @@ const Profile = () => {
           color="gray.500"
         >
           <Text fontSize="lg" mb={2}>
-            История пуста
+            Ничего не найдено
           </Text>
-          <Text fontSize="sm">Загрузите PDF файл на главной странице</Text>
+          <Text fontSize="sm">Измените фильтры или загрузите PDF на главной странице</Text>
         </Box>
       )}
 
@@ -286,43 +364,32 @@ const Profile = () => {
               boxShadow="sm"
               position="relative"
             >
-              {u.status === "generating" && (
-                <Box
-                  position="absolute"
-                  top={-2}
-                  right={-2}
-                  width={3}
-                  height={3}
-                  bg="yellow.400"
-                  borderRadius="full"
-                  animation="pulse 1.5s infinite"
-                  sx={{
-                    "@keyframes pulse": {
-                      "0%": { opacity: 1 },
-                      "50%": { opacity: 0.3 },
-                      "100%": { opacity: 1 },
-                    },
-                  }}
-                />
-              )}
-
               <Flex justify="space-between" align="center" gap={4} wrap="wrap">
                 <Box minW={0} flex="1">
                   <HStack spacing={2} mb={2}>
                     <Icon as={FiFileText} color="blue.500" />
                     <Text fontWeight="bold" isTruncated>
-                      {u.filename}
+                      {u.title}
                     </Text>
                     <Badge colorScheme={status.color}>
                       {status.label}
-                      {u.status === "generating" && "..."}
                     </Badge>
                   </HStack>
 
-                  <HStack spacing={2}>
-                    <Icon as={FiClock} color="gray.500" />
+                  <Text fontSize="sm" color="gray.600" mb={1}>
+                    Исходный файл: {u.filename}
+                  </Text>
+
+                  <HStack spacing={4} wrap="wrap">
+                    <HStack spacing={2}>
+                      <Icon as={FiClock} color="gray.500" />
+                      <Text fontSize="sm" color="gray.500">
+                        {new Date(u.timestamp).toLocaleString()}
+                      </Text>
+                    </HStack>
+
                     <Text fontSize="sm" color="gray.500">
-                      {new Date(u.timestamp).toLocaleString()}
+                      Размер: {formatSize(u.size)}
                     </Text>
                   </HStack>
                 </Box>
@@ -369,19 +436,24 @@ const Profile = () => {
 
       {pages > 1 && (
         <HStack justify="center" mt={6} spacing={3}>
-          <Button size="sm" variant="outline" onClick={() => setPage((p) => p - 1)} isDisabled={page === 1}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setParam("page", String(Math.max(1, safePage - 1)))}
+            isDisabled={safePage === 1}
+          >
             <FiChevronLeft />
           </Button>
 
           <Text fontSize="sm" color="gray.600">
-            {page} / {pages}
+            {safePage} / {pages}
           </Text>
 
           <Button
             size="sm"
             variant="outline"
-            onClick={() => setPage((p) => p + 1)}
-            isDisabled={page === pages}
+            onClick={() => setParam("page", String(Math.min(pages, safePage + 1)))}
+            isDisabled={safePage === pages}
           >
             <FiChevronRight />
           </Button>

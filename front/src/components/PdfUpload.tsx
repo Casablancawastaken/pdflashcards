@@ -5,6 +5,8 @@ import { uploadPdf, type UploadResponse } from "../api/upload";
 import { useAuth } from "../context/AuthContext";
 import { apiFetch } from "../api/client";
 
+const MAX_SIZE = 10 * 1024 * 1024;
+
 const PdfUpload = () => {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -16,11 +18,32 @@ const PdfUpload = () => {
   const { token, refreshAccessToken } = useAuth();
   const toast = useToast();
 
+  const validateFile = (selected: File) => {
+    if (selected.type !== "application/pdf") {
+      return "Можно загрузить только PDF-файл";
+    }
+    if (selected.size > MAX_SIZE) {
+      return "Файл больше 10 МБ";
+    }
+    return null;
+  };
+
+  const applyFile = (selected: File) => {
+    const validationError = validateFile(selected);
+    if (validationError) {
+      setError(validationError);
+      setFile(null);
+      return;
+    }
+
+    setFile(selected);
+    setResult(null);
+    setError(null);
+  };
+
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
-      setResult(null);
-      setError(null);
+      applyFile(e.target.files[0]);
     }
   };
 
@@ -97,12 +120,8 @@ const PdfUpload = () => {
     setIsDragging(false);
 
     const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile && droppedFile.type === "application/pdf") {
-      setFile(droppedFile);
-      setResult(null);
-      setError(null);
-    } else {
-      setError("Можно загрузить только PDF-файл");
+    if (droppedFile) {
+      applyFile(droppedFile);
     }
   };
 
@@ -136,7 +155,7 @@ const PdfUpload = () => {
           </Text>
 
           <Text fontSize="sm" color="gray.500">
-            Поддерживается только формат PDF
+            Только PDF, размер до 10 МБ
           </Text>
 
           <Input type="file" accept="application/pdf" display="none" id="pdf-upload" onChange={onFileChange} />

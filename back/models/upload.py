@@ -2,8 +2,8 @@ from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Enum
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
-from back.models.flashcards import Flashcard
 
+from back.models.flashcards import Flashcard
 from back.db.database import Base
 
 
@@ -19,10 +19,20 @@ class Upload(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String, nullable=False)
+    title = Column(String, nullable=False)
+    object_key = Column(String, unique=True, nullable=False)
+    content_type = Column(String, nullable=False)
+    size = Column(Integer, nullable=False)
+
     timestamp = Column(DateTime, default=datetime.utcnow)
     user_id = Column(Integer, ForeignKey("users.id"))
 
     status = Column(Enum(UploadStatus), default=UploadStatus.uploaded, nullable=False)
 
     user = relationship("User", back_populates="uploads")
-    cards = relationship("Flashcard", backref="upload", cascade="all, delete-orphan", passive_deletes=True)
+    cards = relationship(
+        "Flashcard",
+        backref="upload",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
