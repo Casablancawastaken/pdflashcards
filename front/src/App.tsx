@@ -1,16 +1,19 @@
+import { Suspense, lazy } from "react";
 import { Routes, Route } from "react-router-dom";
-import { Container } from "@chakra-ui/react";
+import { Container, Center, Spinner } from "@chakra-ui/react";
 
 import Header from "./components/Header";
 import PdfUpload from "./components/PdfUpload";
-import Register from "./pages/Register";
-import Login from "./pages/Login";
-import Profile from "./pages/Profile";
 import ProtectedRoute from "./components/ProtectedRoute";
-import UploadDetail from "./pages/UploadDetail";
-import Settings from "./pages/Settings";
-import CardsPage from "./pages/CardsPage";
-import Admin from "./pages/Admin";
+import NotFound from "./pages/NotFound";
+
+const Register = lazy(() => import("./pages/Register"));
+const Login = lazy(() => import("./pages/Login"));
+const Profile = lazy(() => import("./pages/Profile"));
+const UploadDetail = lazy(() => import("./pages/UploadDetail"));
+const Settings = lazy(() => import("./pages/Settings"));
+const CardsPage = lazy(() => import("./pages/CardsPage"));
+const Admin = lazy(() => import("./pages/Admin"));
 
 function App() {
   return (
@@ -18,16 +21,60 @@ function App() {
       <Header />
 
       <Container maxW="container.lg" py={6}>
-        <Routes>
-          <Route path="/" element={<PdfUpload />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/profile" element={<ProtectedRoute> <Profile /> </ProtectedRoute>} />
-          <Route path="/uploads/:id" element={<UploadDetail />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/cards/:id" element={<CardsPage />} />
-          <Route path="/admin" element={<ProtectedRoute roles={["admin"]}><Admin /></ProtectedRoute>}/>
-        </Routes>
+        <Suspense
+          fallback={
+            <Center minH="40vh">
+              <Spinner size="lg" color="blue.500" />
+            </Center>
+          }
+        >
+          <Routes>
+            <Route path="/" element={<PdfUpload />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/uploads/:id"
+              element={
+                <ProtectedRoute>
+                  <UploadDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/cards/:id"
+              element={
+                <ProtectedRoute>
+                  <CardsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute roles={["admin"]}>
+                  <Admin />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </Container>
     </>
   );

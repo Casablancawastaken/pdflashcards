@@ -1,8 +1,22 @@
 import { useEffect, useState } from "react";
-import { Box, Heading, Text, Spinner, Button, Input, VStack, HStack, useToast } from "@chakra-ui/react";
+import {
+  Box,
+  Heading,
+  Text,
+  Spinner,
+  Button,
+  Input,
+  VStack,
+  HStack,
+  useToast,
+  SimpleGrid,
+  Image,
+} from "@chakra-ui/react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { apiFetch } from "../api/client";
+import Seo from "../components/Seo";
+import { fetchBooksByUpload, type BookItem } from "../api/books";
 
 interface UploadDetailData {
   id: number;
@@ -28,6 +42,10 @@ const UploadDetail = () => {
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [books, setBooks] = useState<BookItem[]>([]);
+  const [booksLoading, setBooksLoading] = useState(false);
+  const [booksError, setBooksError] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -49,6 +67,27 @@ const UploadDetail = () => {
 
     if (id && token) fetchData();
   }, [id, token, refreshAccessToken]);
+
+  useEffect(() => {
+    const loadBooks = async () => {
+      if (!id || !token || !data) return;
+
+      setBooksLoading(true);
+      setBooksError(null);
+
+      try {
+        const items = await fetchBooksByUpload(id, token, refreshAccessToken);
+        setBooks(items);
+      } catch (e) {
+        if (e instanceof Error) setBooksError(e.message);
+        else setBooksError("Внешний API недоступен");
+      } finally {
+        setBooksLoading(false);
+      }
+    };
+
+    loadBooks();
+  }, [id, token, refreshAccessToken, data]);
 
   const saveTitle = async () => {
     if (!id) return;
@@ -109,6 +148,13 @@ const UploadDetail = () => {
 
   return (
     <Box>
+      <Seo
+        title={`${data.title} | pdflashcards`}
+        description={`Просмотр PDF: ${data.title}`}
+        canonical={`${window.location.origin}/uploads/${id}`}
+        noindex
+      />
+
       <Button mb={4} onClick={() => navigate(-1)}>
         ← Назад
       </Button>
@@ -118,17 +164,10 @@ const UploadDetail = () => {
 
         <Text color="gray.500">Исходное имя файла: {data.filename}</Text>
         <Text color="gray.500">Статус: {data.status}</Text>
-        <Text color="gray.500">
-          Дата: {new Date(data.timestamp).toLocaleString()}
-        </Text>
+        <Text color="gray.500">Дата: {new Date(data.timestamp).toLocaleString()}</Text>
 
         <HStack>
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Название записи"
-            maxLength={120}
-          />
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Название записи" maxLength={120} />
           <Button colorScheme="blue" onClick={saveTitle} isLoading={saving}>
             Сохранить
           </Button>
@@ -138,16 +177,74 @@ const UploadDetail = () => {
         </HStack>
       </VStack>
 
-      <Text
-        whiteSpace="pre-wrap"
-        border="1px solid #ddd"
-        p={4}
-        borderRadius="md"
-        maxH="70vh"
-        overflowY="auto"
-      >
+      <Text whiteSpace="pre-wrap" border="1px solid #ddd" p={4} borderRadius="md" maxH="70vh" overflowY="auto">
         {data.text || "(Нет текста в PDF)"}
       </Text>
+
+      <Box mt={8}>
+        <Heading size="md" mb={4}>
+          Связанные книги
+        </Heading>
+
+        {booksLoading && <Text color="gray.500">Загрузка внешних данных...</Text>}
+
+        {!booksLoading && booksError && (
+          <Text color="gray.500">
+            Внешний сервис сейчас недоступен. Основной функционал страницы работает без него.
+          </Text>
+        )}
+
+        {!booksLoading && !booksError && books.length === 0 && <Text color="gray.500">Ничего не найдено</Text>}
+
+        {!booksLoading && !booksError && books.length > 0 && (
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+            {books.map((book) => (
+              <Box key={book.id} borderWidth="1px" borderRadius="xl" p={4} bg="white">
+                {book.thumbnail && (
+                  <Image
+                    src={book.thumbnail}
+                    alt={book.title}
+                    loading="lazy"
+                    mb={3}
+                    borderRadius="md"
+                  />
+                )}
+
+                <Heading size="sm" mb={2}>
+                  {book.title}
+                </Heading>
+
+                {book.authors?.length > 0 && (
+                  <Text fontSize="sm" color="gray.600" mb={2}>
+                    Авторы: {book.authors.join(", ")}
+                  </Text>
+                )}
+
+                {book.description && (
+                  <Text fontSize="sm" color="gray.700" noOfLines={4}>
+                    {book.description}
+                  </Text>
+                )}
+
+                {book.info_url && (
+                  <Button
+                    as="a"
+                    href={book.info_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    mt={3}
+                    size="sm"
+                    variant="outline"
+                    colorScheme="blue"
+                  >
+                    Открыть
+                  </Button>
+                )}
+              </Box>
+            ))}
+          </SimpleGrid>
+        )}
+      </Box>
     </Box>
   );
 };

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Box, Button, Heading, Input, Select, Text, VStack, useToast } from "@chakra-ui/react";
 import { useAuth } from "../context/AuthContext";
 import { apiFetch } from "../api/client";
+import Seo from "../components/Seo";
 
 const Admin = () => {
   const { token, refreshAccessToken } = useAuth();
@@ -45,6 +46,13 @@ const Admin = () => {
 
   return (
     <Box maxW="520px" mx="auto" bg="white" p={8} borderRadius="2xl" borderWidth="1px" boxShadow="lg">
+      <Seo
+        title="Admin | pdflashcards"
+        description="Панель администратора"
+        canonical={`${window.location.origin}/admin`}
+        noindex
+      />
+
       <Heading size="lg" mb={2}>
         Admin
       </Heading>

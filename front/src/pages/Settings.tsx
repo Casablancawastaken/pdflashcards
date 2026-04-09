@@ -14,6 +14,7 @@ import {
 } from "@chakra-ui/react";
 import { useAuth } from "../context/AuthContext";
 import { apiFetch } from "../api/client";
+import Seo from "../components/Seo";
 
 interface UserProfile {
   username: string;
@@ -94,6 +95,13 @@ const Settings = () => {
 
   return (
     <Center py={12}>
+      <Seo
+        title="Настройки | pdflashcards"
+        description="Настройки аккаунта pdflashcards"
+        canonical={`${window.location.origin}/settings`}
+        noindex
+      />
+
       <Box w="100%" maxW="600px" bg="white" borderRadius="2xl" boxShadow="lg" borderWidth="1px" p={10}>
         <Heading size="lg" textAlign="center" mb={2}>
           Настройки аккаунта
@@ -133,18 +141,8 @@ const Settings = () => {
         </Heading>
 
         <VStack spacing={4}>
-          <Input
-            placeholder="Текущий пароль"
-            type="password"
-            value={oldPassword}
-            onChange={(e) => setOldPassword(e.target.value)}
-          />
-          <Input
-            placeholder="Новый пароль"
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-          />
+          <Input placeholder="Текущий пароль" type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} />
+          <Input placeholder="Новый пароль" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
           <Input
             placeholder="Повторите новый пароль"
             type="password"

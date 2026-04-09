@@ -1,6 +1,7 @@
 import AuthForm from "../components/AuthForm";
 import { loginUser } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
+import Seo from "../components/Seo";
 
 const Login = () => {
   const { login } = useAuth();
@@ -15,27 +16,36 @@ const Login = () => {
   };
 
   return (
-    <AuthForm
-      title="Вход"
-      onSubmit={handleLogin}
-      buttonText="Войти"
-      fields={[
-        {
-          name: "username",
-          label: "Имя пользователя",
-          placeholder: "Введите имя пользователя",
-        },
-        {
-          name: "password",
-          label: "Пароль",
-          placeholder: "Введите пароль",
-          type: "password",
-        },
-      ]}
-      footerText="Нет аккаунта?"
-      footerLinkText="Регистрация"
-      footerLinkTo="/register"
-    />
+    <>
+      <Seo
+        title="Вход | pdflashcards"
+        description="Вход в личный кабинет pdflashcards"
+        canonical={`${window.location.origin}/login`}
+        noindex
+      />
+
+      <AuthForm
+        title="Вход"
+        onSubmit={handleLogin}
+        buttonText="Войти"
+        fields={[
+          {
+            name: "username",
+            label: "Имя пользователя",
+            placeholder: "Введите имя пользователя",
+          },
+          {
+            name: "password",
+            label: "Пароль",
+            placeholder: "Введите пароль",
+            type: "password",
+          },
+        ]}
+        footerText="Нет аккаунта?"
+        footerLinkText="Регистрация"
+        footerLinkTo="/register"
+      />
+    </>
   );
 };
 

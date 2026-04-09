@@ -4,6 +4,7 @@ import { FiChevronLeft, FiChevronRight, FiArrowLeft } from "react-icons/fi";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { apiFetch } from "../api/client";
+import Seo from "../components/Seo";
 
 interface CardItem {
   id: number;
@@ -80,6 +81,13 @@ const CardsPage = () => {
 
   return (
     <Center py={10}>
+      <Seo
+        title="Карточки | pdflashcards"
+        description="Просмотр сгенерированных карточек"
+        canonical={`${window.location.origin}/cards/${id}`}
+        noindex
+      />
+
       <Box w="100%" maxW="900px" bg="white" borderRadius="2xl" boxShadow="lg" borderWidth="1px" p={8}>
         <Flex justify="space-between" align="center" mb={6}>
           <Button leftIcon={<FiArrowLeft />} variant="ghost" onClick={() => navigate("/profile")}>

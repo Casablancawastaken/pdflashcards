@@ -4,6 +4,7 @@ import { FiUploadCloud, FiCpu } from "react-icons/fi";
 import { uploadPdf, type UploadResponse } from "../api/upload";
 import { useAuth } from "../context/AuthContext";
 import { apiFetch } from "../api/client";
+import Seo from "./Seo";
 
 const MAX_SIZE = 10 * 1024 * 1024;
 
@@ -126,75 +127,93 @@ const PdfUpload = () => {
   };
 
   return (
-    <VStack spacing={10} align="stretch">
-      <Box textAlign="center">
-        <Heading size="lg" mb={2}>
-          Генерация карточек из PDF
-        </Heading>
-        <Text color="gray.600">Загрузите PDF-файл — мы создадим учебные карточки автоматически</Text>
-      </Box>
+    <>
+      <Seo
+        title="PDF Flashcards — генерация учебных карточек из PDF"
+        description="Загрузите PDF и получите готовые учебные карточки автоматически."
+        canonical={`${window.location.origin}/`}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          name: "pdflashcards",
+          applicationCategory: "EducationalApplication",
+          operatingSystem: "Web",
+          description: "Генерация учебных карточек из PDF-файлов",
+          url: `${window.location.origin}/`,
+        }}
+      />
 
-      <Box
-        borderWidth="2px"
-        borderStyle="dashed"
-        borderColor={isDragging ? "blue.500" : "blue.300"}
-        borderRadius="xl"
-        p={10}
-        bg={isDragging ? "blue.50" : "white"}
-        textAlign="center"
-        transition="all 0.2s"
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        <VStack spacing={4}>
-          <Icon as={FiUploadCloud} boxSize={12} color="blue.500" />
-
-          <Text fontSize="lg" fontWeight="medium">
-            {isDragging ? "Отпустите файл для загрузки" : "Выберите PDF файл"}
-          </Text>
-
-          <Text fontSize="sm" color="gray.500">
-            Только PDF, размер до 10 МБ
-          </Text>
-
-          <Input type="file" accept="application/pdf" display="none" id="pdf-upload" onChange={onFileChange} />
-
-          <Button as="label" htmlFor="pdf-upload" colorScheme="blue" variant="outline" cursor="pointer">
-            Выбрать файл
-          </Button>
-
-          {file && (
-            <Text fontSize="sm" color="gray.600">
-              Выбран файл: <b>{file.name}</b>
-            </Text>
-          )}
-        </VStack>
-      </Box>
-
-      <Button colorScheme="blue" size="lg" onClick={onUpload} isLoading={loading}>
-        Загрузить PDF
-      </Button>
-
-      {error && <Text color="red.500">{error}</Text>}
-
-      {result && (
-        <Box textAlign="center">
-          <Button
-            colorScheme="blue"
-            size="lg"
-            px={16}
-            py={7}
-            fontSize="lg"
-            leftIcon={<FiCpu />}
-            onClick={generateAI}
-            isLoading={aiLoading}
-          >
-            Сгенерировать карточки
-          </Button>
+      <VStack spacing={10} align="stretch">
+        <Box textAlign="center" as="section">
+          <Heading as="h1" size="lg" mb={2}>
+            Генерация карточек из PDF
+          </Heading>
+          <Text color="gray.600">Загрузите PDF-файл — мы создадим учебные карточки автоматически</Text>
         </Box>
-      )}
-    </VStack>
+
+        <Box
+          as="section"
+          borderWidth="2px"
+          borderStyle="dashed"
+          borderColor={isDragging ? "blue.500" : "blue.300"}
+          borderRadius="xl"
+          p={10}
+          bg={isDragging ? "blue.50" : "white"}
+          textAlign="center"
+          transition="all 0.2s"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          <VStack spacing={4}>
+            <Icon as={FiUploadCloud} boxSize={12} color="blue.500" aria-hidden="true" />
+
+            <Heading as="h2" size="md">
+              {isDragging ? "Отпустите файл для загрузки" : "Выберите PDF файл"}
+            </Heading>
+
+            <Text fontSize="sm" color="gray.500">
+              Только PDF, размер до 10 МБ
+            </Text>
+
+            <Input type="file" accept="application/pdf" display="none" id="pdf-upload" onChange={onFileChange} />
+
+            <Button as="label" htmlFor="pdf-upload" colorScheme="blue" variant="outline" cursor="pointer">
+              Выбрать файл
+            </Button>
+
+            {file && (
+              <Text fontSize="sm" color="gray.600">
+                Выбран файл: <b>{file.name}</b>
+              </Text>
+            )}
+          </VStack>
+        </Box>
+
+        <Button colorScheme="blue" size="lg" onClick={onUpload} isLoading={loading}>
+          Загрузить PDF
+        </Button>
+
+        {error && <Text color="red.500">{error}</Text>}
+
+        {result && (
+          <Box textAlign="center">
+            <Button
+              colorScheme="blue"
+              size="lg"
+              px={16}
+              py={7}
+              fontSize="lg"
+              leftIcon={<FiCpu />}
+              onClick={generateAI}
+              isLoading={aiLoading}
+            >
+              Сгенерировать карточки
+            </Button>
+          </Box>
+        )}
+      </VStack>
+    </>
   );
 };
 

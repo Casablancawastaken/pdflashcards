@@ -1,10 +1,26 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { Box, Button, Heading, VStack, Text, HStack, useToast, Icon, Flex, Input, Badge, Spinner, Select, SimpleGrid } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Heading,
+  VStack,
+  Text,
+  HStack,
+  useToast,
+  Icon,
+  Flex,
+  Input,
+  Badge,
+  Spinner,
+  Select,
+  SimpleGrid,
+} from "@chakra-ui/react";
 import { FiFileText, FiTrash2, FiEye, FiCpu, FiClock, FiSearch, FiChevronLeft, FiChevronRight, FiRefreshCw } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import { useUploadsStatus } from "../api/useUploadsStatus";
 import { Link, useSearchParams } from "react-router-dom";
 import { apiFetch } from "../api/client";
+import Seo from "../components/Seo";
 
 interface UploadItem {
   id: number;
@@ -148,9 +164,7 @@ const Profile = () => {
     const searchLower = search.trim().toLowerCase();
     if (searchLower) {
       data = data.filter(
-        (u) =>
-          u.filename.toLowerCase().includes(searchLower) ||
-          u.title.toLowerCase().includes(searchLower)
+        (u) => u.filename.toLowerCase().includes(searchLower) || u.title.toLowerCase().includes(searchLower)
       );
     }
 
@@ -233,15 +247,14 @@ const Profile = () => {
 
   return (
     <Box maxW="950px" mx="auto">
-      <Box
-        bg="white"
-        borderWidth="1.5px"
-        borderColor="blue.400"
-        borderRadius="xl"
-        boxShadow="sm"
-        p={6}
-        mb={6}
-      >
+      <Seo
+        title="История файлов | pdflashcards"
+        description="История загруженных PDF-файлов"
+        canonical={`${window.location.origin}/profile`}
+        noindex
+      />
+
+      <Box bg="white" borderWidth="1.5px" borderColor="blue.400" borderRadius="xl" boxShadow="sm" p={6} mb={6}>
         <Flex justify="space-between" align="center" gap={4} wrap="wrap">
           <Box>
             <Heading size="lg" mb={1}>
@@ -256,13 +269,7 @@ const Profile = () => {
           </Box>
 
           <HStack>
-            <Button
-              leftIcon={<FiRefreshCw />}
-              colorScheme="blue"
-              variant="outline"
-              onClick={handleRefresh}
-              isLoading={refreshing}
-            >
+            <Button leftIcon={<FiRefreshCw />} colorScheme="blue" variant="outline" onClick={handleRefresh} isLoading={refreshing}>
               Обновить
             </Button>
 
@@ -280,19 +287,19 @@ const Profile = () => {
 
         <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mt={4}>
           <Box>
-            <Text mb={1} fontSize="sm" color="gray.600">Поиск</Text>
+            <Text mb={1} fontSize="sm" color="gray.600">
+              Поиск
+            </Text>
             <HStack>
               <Icon as={FiSearch} color="gray.500" />
-              <Input
-                placeholder="Поиск по title или имени файла"
-                value={search}
-                onChange={(e) => setParam("search", e.target.value)}
-              />
+              <Input placeholder="Поиск по title или имени файла" value={search} onChange={(e) => setParam("search", e.target.value)} />
             </HStack>
           </Box>
 
           <Box>
-            <Text mb={1} fontSize="sm" color="gray.600">Статус</Text>
+            <Text mb={1} fontSize="sm" color="gray.600">
+              Статус
+            </Text>
             <Select value={statusFilter} onChange={(e) => setParam("status", e.target.value)}>
               <option value="all">Все</option>
               <option value="uploaded">Загружен</option>
@@ -303,17 +310,23 @@ const Profile = () => {
           </Box>
 
           <Box>
-            <Text mb={1} fontSize="sm" color="gray.600">Дата от</Text>
+            <Text mb={1} fontSize="sm" color="gray.600">
+              Дата от
+            </Text>
             <Input type="date" value={dateFrom} onChange={(e) => setParam("dateFrom", e.target.value)} />
           </Box>
 
           <Box>
-            <Text mb={1} fontSize="sm" color="gray.600">Дата до</Text>
+            <Text mb={1} fontSize="sm" color="gray.600">
+              Дата до
+            </Text>
             <Input type="date" value={dateTo} onChange={(e) => setParam("dateTo", e.target.value)} />
           </Box>
 
           <Box>
-            <Text mb={1} fontSize="sm" color="gray.600">Сортировка</Text>
+            <Text mb={1} fontSize="sm" color="gray.600">
+              Сортировка
+            </Text>
             <Select value={sortBy} onChange={(e) => setParam("sortBy", e.target.value)}>
               <option value="timestamp_desc">Сначала новые</option>
               <option value="timestamp_asc">Сначала старые</option>
@@ -333,16 +346,7 @@ const Profile = () => {
       )}
 
       {!loading && uploads.length === 0 && (
-        <Box
-          borderWidth="2px"
-          borderStyle="dashed"
-          borderColor="blue.300"
-          borderRadius="xl"
-          p={10}
-          textAlign="center"
-          bg="white"
-          color="gray.500"
-        >
+        <Box borderWidth="2px" borderStyle="dashed" borderColor="blue.300" borderRadius="xl" p={10} textAlign="center" bg="white" color="gray.500">
           <Text fontSize="lg" mb={2}>
             Ничего не найдено
           </Text>
@@ -355,15 +359,7 @@ const Profile = () => {
           const status = statusMap[u.status];
 
           return (
-            <Box
-              key={u.id}
-              borderWidth="1px"
-              borderRadius="xl"
-              p={5}
-              bg="white"
-              boxShadow="sm"
-              position="relative"
-            >
+            <Box key={u.id} borderWidth="1px" borderRadius="xl" p={5} bg="white" boxShadow="sm" position="relative">
               <Flex justify="space-between" align="center" gap={4} wrap="wrap">
                 <Box minW={0} flex="1">
                   <HStack spacing={2} mb={2}>
@@ -371,9 +367,7 @@ const Profile = () => {
                     <Text fontWeight="bold" isTruncated>
                       {u.title}
                     </Text>
-                    <Badge colorScheme={status.color}>
-                      {status.label}
-                    </Badge>
+                    <Badge colorScheme={status.color}>{status.label}</Badge>
                   </HStack>
 
                   <Text fontSize="sm" color="gray.600" mb={1}>
@@ -395,14 +389,7 @@ const Profile = () => {
                 </Box>
 
                 <HStack spacing={2}>
-                  <Button
-                    as={Link}
-                    to={`/uploads/${u.id}`}
-                    leftIcon={<FiEye />}
-                    size="sm"
-                    variant="outline"
-                    colorScheme="blue"
-                  >
+                  <Button as={Link} to={`/uploads/${u.id}`} leftIcon={<FiEye />} size="sm" variant="outline" colorScheme="blue">
                     Просмотр
                   </Button>
 
@@ -418,13 +405,7 @@ const Profile = () => {
                     Карточки
                   </Button>
 
-                  <Button
-                    leftIcon={<FiTrash2 />}
-                    size="sm"
-                    variant="outline"
-                    colorScheme="red"
-                    onClick={() => handleDelete(u.id)}
-                  >
+                  <Button leftIcon={<FiTrash2 />} size="sm" variant="outline" colorScheme="red" onClick={() => handleDelete(u.id)}>
                     Удалить
                   </Button>
                 </HStack>
@@ -436,12 +417,7 @@ const Profile = () => {
 
       {pages > 1 && (
         <HStack justify="center" mt={6} spacing={3}>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setParam("page", String(Math.max(1, safePage - 1)))}
-            isDisabled={safePage === 1}
-          >
+          <Button size="sm" variant="outline" onClick={() => setParam("page", String(Math.max(1, safePage - 1)))} isDisabled={safePage === 1}>
             <FiChevronLeft />
           </Button>
 
@@ -449,12 +425,7 @@ const Profile = () => {
             {safePage} / {pages}
           </Text>
 
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setParam("page", String(Math.min(pages, safePage + 1)))}
-            isDisabled={safePage === pages}
-          >
+          <Button size="sm" variant="outline" onClick={() => setParam("page", String(Math.min(pages, safePage + 1)))} isDisabled={safePage === pages}>
             <FiChevronRight />
           </Button>
         </HStack>
