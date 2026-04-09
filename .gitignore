@@ -10,9 +10,13 @@ __pycache__/
 uploads/
 __pycache__/
 app.db
+test_app.db
 back/.venv/
 back/__pycache__/
 back/uploads
+back/test_app.db
+back/.coverage
+back/.pytest_cache
 
 # ---- Node / React ----
 node_modules/
@@ -20,7 +24,10 @@ dist/
 *.log
 front/node_modules/
 front/dist/
+front/coverage
 front/.env
+front/test-results
+test-results/
 .vscode/
 .idea/
 

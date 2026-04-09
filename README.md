@@ -1,19 +1,46 @@
-# 📘 PDFlashcards — Веб-приложение для создания учебных карточек из PDF
+# 📚 PDF Flashcards
 
-**Предмет:** Fullstack-разработка  
-**Технологии:** FastAPI + React (TypeScript) + SQLite + Argon2 + JWT  
-**Цель:** автоматическое извлечение текста из PDF-конспектов и преобразование в обучающие карточки.
-
----
+Fullstack-приложение для генерации flashcard’ов из PDF с использованием LLM.
 
 ## 🚀 Возможности
 
-✅ Загрузка PDF-файлов → извлечение текста (через `pdfplumber`)  
-✅ Регистрация и авторизация пользователей  
-✅ Хэширование паролей с использованием **Argon2**  
-✅ JWT-токены для защиты эндпоинтов  
-✅ SQLite база с пользователями  
-✅ Чистая структура проекта (бэкенд / фронтенд раздельно)  
-✅ Swagger-документация API на `/docs`
+- Регистрация и авторизация пользователей (JWT + refresh)
+- Загрузка PDF-файлов
+- Генерация карточек через LLM (Ollama)
+- Просмотр карточек
+- История загрузок
+- Фильтрация, поиск, пагинация
+- Интеграция с внешним API книг
+- Ролевая модель (user / admin)
 
 ---
+
+# 🧱 Архитектура
+
+## Backend
+- FastAPI
+- SQLAlchemy
+- SQLite
+- JWT (access + refresh tokens)
+- SSE для обновления статусов
+
+## Frontend
+- React + TypeScript
+- Vite
+- Chakra UI
+
+## Тестирование
+- Backend: pytest (unit + integration)
+- Frontend: Vitest (unit + component)
+- E2E: Playwright
+
+---
+
+# ⚙️ Запуск проекта
+
+## Backend
+
+```bash
+cd back
+pip install -r requirements.txt
+uvicorn main:app --reload
