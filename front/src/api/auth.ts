@@ -1,3 +1,5 @@
+import { API_URL } from "./config";
+
 export interface RegisterData {
   username: string;
   email: string;
@@ -8,8 +10,6 @@ export interface LoginData {
   username: string;
   password: string;
 }
-
-const API_URL = "http://127.0.0.1:8000";
 
 export async function registerUser(data: RegisterData) {
   const res = await fetch(`${API_URL}/auth/register`, {

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { API_URL } from "./config";
 
 interface StatusEvent {
   upload_id: number;
@@ -48,7 +49,7 @@ export const useUploadsStatus = (props?: UseUploadsStatusProps) => {
     globalConnectionId++;
     connectionIdRef.current = globalConnectionId;
 
-    const url = new URL(`http://127.0.0.1:8000/events/uploads-status`);
+    const url = new URL(`${API_URL}/events/uploads-status`);
     url.searchParams.append('token', token);
     url.searchParams.append('connection_id', String(connectionIdRef.current));
     

@@ -64,3 +64,7 @@ def sitemap():
 </urlset>
 """
     return Response(content=content, media_type="application/xml")
+
+@app.get("/health", tags=["health"])
+def health():
+    return {"status": "ok"}

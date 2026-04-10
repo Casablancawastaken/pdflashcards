@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import json
 import re
+import os
 import requests
 
 from back.db.database import get_db
@@ -15,8 +16,8 @@ from back.services.storage import download_bytes
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
-OLLAMA_URL = "http://127.0.0.1:11434"
-MODEL_NAME = "llama3"
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://127.0.0.1:11434")
+MODEL_NAME = os.getenv("OLLAMA_MODEL", "llama3")
 
 
 @router.post("/generate_cards/{upload_id}")

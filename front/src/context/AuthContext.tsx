@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_URL } from "../api/config";
 
 interface User {
   username: string;
@@ -37,7 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    fetch("http://127.0.0.1:8000/auth/me", {
+    fetch(`${API_URL}/auth/me`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
       .then((r) => (r.ok ? r.json() : Promise.reject()))
@@ -64,7 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAccessToken(tokens.access_token);
     setRefreshToken(tokens.refresh_token);
 
-    const r = await fetch("http://127.0.0.1:8000/auth/me", {
+    const r = await fetch(`${API_URL}/auth/me`, {
       headers: { Authorization: `Bearer ${tokens.access_token}` },
     });
 
@@ -83,7 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const rt = refreshToken || localStorage.getItem("refresh_token");
     if (!rt) return false;
 
-    const r = await fetch("http://127.0.0.1:8000/auth/refresh", {
+    const r = await fetch(`${API_URL}/auth/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refresh_token: rt }),
@@ -105,7 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     const rt = refreshToken || localStorage.getItem("refresh_token");
     if (rt) {
-      await fetch("http://127.0.0.1:8000/auth/logout", {
+      await fetch(`${API_URL}/auth/logout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refresh_token: rt, all_sessions: false }),
